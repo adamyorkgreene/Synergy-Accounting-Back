@@ -21,19 +21,28 @@ public class UserService {
         if (userRepository.findByEmail(email) == null) {
             if (userRepository.findByUsername(username) == null) {
                 if (password.equals(confpassword)) {
-                    if (email.contains("@") && email.contains(".")) {
-                        if (password.length() > 5) {
-                            return ResponseEntity.ok(userRepository.save(user));
+                    if (email.contains("@") && email.contains(".") && !email.contains(" ")) {
+                        if (!username.isBlank() && !username.contains(" ")) {
+                            if (password.length() > 5 && !password.contains(" ")) {
+                                return ResponseEntity.ok(userRepository.save(user));
+                            }
+                            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                                    new ErrorResponse("Password must be at least 6 characters and not contain spaces."));
                         }
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Password must be at least 6 characters."));
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                                new ErrorResponse("Username cannot be blank or contain spaces"));
                     }
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Email address is invalid."));
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                            new ErrorResponse("Email address is invalid."));
                 }
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Passwords do not match."));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new ErrorResponse("Passwords do not match."));
             }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("This username already exists."));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    new ErrorResponse("This username already exists."));
         }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("An account already exists using this email."));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ErrorResponse("An account already exists using this email."));
     }
 
     public User loginUser(String username, String password) {
