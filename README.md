@@ -1,2 +1,3 @@
-# Synergy-Accounting-Back
-This is the back-end repository for the Synergy Accounting Application being developed by KSU SWE4713 students using SpringBoot Java.
+Repositories:
+https://github.com/adamyorkgreene/Synergy-Accounting-Front
+https://github.com/adamyorkgreene/Synergy-Accounting-Back
