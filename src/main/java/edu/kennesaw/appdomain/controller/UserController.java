@@ -1,6 +1,7 @@
 package edu.kennesaw.appdomain.controller;
 
 import edu.kennesaw.appdomain.User;
+import edu.kennesaw.appdomain.dto.RegistrationRequest;
 import edu.kennesaw.appdomain.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,9 +17,12 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/register")
-    public User registerUser(@RequestBody User user) {
-
-        return userService.registerUser(user);
+    public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest) {
+        User user = new User();
+        user.setEmail(registrationRequest.getEmail());
+        user.setUsername(registrationRequest.getUsername());
+        user.setPassword(registrationRequest.getPassword());
+        return userService.registerUser(user, registrationRequest.getConfpassword());
     }
 
     @PostMapping("/login")
