@@ -1,4 +1,4 @@
-package com.example.demo;
+package edu.kennesaw.appdomain;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.junit.jupiter.api.BeforeAll;
@@ -8,7 +8,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @TestPropertySource(locations = "classpath:application-test.properties")
-public class DemoApplicationTests {
+public class FinanceApplicationTests {
 
     @BeforeAll
     public static void setup() {

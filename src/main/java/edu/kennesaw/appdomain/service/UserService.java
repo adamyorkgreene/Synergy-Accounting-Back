@@ -1,7 +1,7 @@
-package com.example.demo.service;
+package edu.kennesaw.appdomain.service;
 
-import com.example.demo.User;
-import com.example.demo.repository.UserRepository;
+import edu.kennesaw.appdomain.User;
+import edu.kennesaw.appdomain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

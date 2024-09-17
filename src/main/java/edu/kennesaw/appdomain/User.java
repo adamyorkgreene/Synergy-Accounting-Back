@@ -1,4 +1,4 @@
-package com.example.demo;
+package edu.kennesaw.appdomain;
 
 import jakarta.persistence.*;
 

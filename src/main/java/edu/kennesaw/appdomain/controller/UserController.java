@@ -1,7 +1,7 @@
-package com.example.demo.controller;
+package edu.kennesaw.appdomain.controller;
 
-import com.example.demo.User;
-import com.example.demo.service.UserService;
+import edu.kennesaw.appdomain.User;
+import edu.kennesaw.appdomain.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
