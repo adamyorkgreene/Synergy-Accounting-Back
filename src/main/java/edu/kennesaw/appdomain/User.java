@@ -2,6 +2,8 @@ package edu.kennesaw.appdomain;
 
 import jakarta.persistence.*;
 
+import java.util.Random;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -19,9 +21,18 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    public Long getId() {
-        return id;
+    @Column(nullable = false)
+    private int verificationCode;
+
+    @Column(nullable = false)
+    private boolean isVerified = false;
+
+    public User() {
+        Random ran = new Random();
+        verificationCode = ran.nextInt(999999);
     }
+
+    public Long getId() { return id; }
 
     public void setId(Long id) {
         this.id = id;
@@ -51,5 +62,18 @@ public class User {
         return email;
     }
 
+    public void setVerificationCode(int verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public int getVerificationCode() { return verificationCode; }
+
+    public void setIsVerified(boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
 
 }

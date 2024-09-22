@@ -14,6 +14,9 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EmailService ems;
+
     public ResponseEntity<?> registerUser(User user, String confpassword) {
         String email = user.getEmail();
         String username = user.getUsername();
@@ -24,7 +27,9 @@ public class UserService {
                     if (email.contains("@") && email.contains(".") && !email.contains(" ")) {
                         if (!username.isBlank() && !username.contains(" ")) {
                             if (password.length() > 5 && !password.contains(" ")) {
-                                return ResponseEntity.ok(userRepository.save(user));
+                                User registeredUser = userRepository.save(user);
+                                ems.sendNoReplyEmail(email, "Your verification code: " + registeredUser.getVerificationCode());
+                                return ResponseEntity.ok(registeredUser);
                             }
                             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                                     new ErrorResponse("Password must be at least 6 characters and not contain spaces."));
@@ -53,4 +58,11 @@ public class UserService {
         return null;
     }
 
+    public User verifyUser(User user, int verificationCode) {
+        User verifiedUser = userRepository.findByUsername(user.getUsername());
+        if (verifiedUser != null && verifiedUser.getVerificationCode() == verificationCode) {
+            return verifiedUser;
+        }
+        return null;
+    }
 }
