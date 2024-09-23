@@ -62,6 +62,8 @@ public class UserService {
         User verifiedUser = userRepository.findByUserid(id);
         if (verifiedUser != null) {
             if (verifiedUser.getVerificationCode().equals(verificationCode)) {
+                verifiedUser.setIsVerified(true);
+                userRepository.save(verifiedUser);
                 return verifiedUser;
             }
         }

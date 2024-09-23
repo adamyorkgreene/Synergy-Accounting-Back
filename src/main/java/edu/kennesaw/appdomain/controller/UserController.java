@@ -40,7 +40,6 @@ public class UserController {
     public ResponseEntity<User> verifyUser(@RequestBody VerificationRequest verificationRequest) {
         User verifiedUser = userService.verifyUser(verificationRequest.getUserId(), verificationRequest.getVerificationCode());
         if (verifiedUser != null) {
-            verifiedUser.setIsVerified(true);
             return ResponseEntity.ok(verifiedUser);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
