@@ -23,6 +23,7 @@ public class UserController {
         user.setEmail(registrationRequest.getEmail());
         user.setUsername(registrationRequest.getUsername());
         user.setPassword(registrationRequest.getPassword());
+        user.setIsVerified(false);
         return userService.registerUser(user, registrationRequest.getConfpassword());
     }
 
@@ -37,7 +38,7 @@ public class UserController {
 
     @PostMapping("/verify")
     public ResponseEntity<User> verifyUser(@RequestBody VerificationRequest verificationRequest) {
-        User verifiedUser = userService.verifyUser(verificationRequest.getUser(), verificationRequest.getVerificationCode());
+        User verifiedUser = userService.verifyUser(verificationRequest.getUserId(), verificationRequest.getVerificationCode());
         if (verifiedUser != null) {
             verifiedUser.setIsVerified(true);
             return ResponseEntity.ok(verifiedUser);

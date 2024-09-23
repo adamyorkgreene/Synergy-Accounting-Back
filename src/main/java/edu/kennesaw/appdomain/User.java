@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 import java.util.Random;
@@ -10,7 +11,8 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @JsonProperty("userid")
+    private Long userid;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -22,20 +24,21 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private int verificationCode;
+    private String verificationCode;
 
-    @Column(nullable = false)
-    private boolean isVerified = false;
+    @Column(nullable = false, columnDefinition = "TINYINT(1)")
+    private boolean isVerified;
 
     public User() {
         Random ran = new Random();
-        verificationCode = ran.nextInt(999999);
+        verificationCode = ran.nextInt(999999) + "";
     }
 
-    public Long getId() { return id; }
+    @JsonProperty("userid")
+    public Long getUserid() { return userid; }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setUserid(Long id) {
+        this.userid = id;
     }
 
     public void setUsername(String username) {
@@ -62,16 +65,17 @@ public class User {
         return email;
     }
 
-    public void setVerificationCode(int verificationCode) {
+    public void setVerificationCode(String verificationCode) {
         this.verificationCode = verificationCode;
     }
 
-    public int getVerificationCode() { return verificationCode; }
+    public String getVerificationCode() { return verificationCode; }
 
     public void setIsVerified(boolean isVerified) {
         this.isVerified = isVerified;
     }
 
+    @JsonProperty("isVerified")
     public boolean isVerified() {
         return isVerified;
     }

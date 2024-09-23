@@ -58,10 +58,12 @@ public class UserService {
         return null;
     }
 
-    public User verifyUser(User user, int verificationCode) {
-        User verifiedUser = userRepository.findByUsername(user.getUsername());
-        if (verifiedUser != null && verifiedUser.getVerificationCode() == verificationCode) {
-            return verifiedUser;
+    public User verifyUser(Long id, String verificationCode) {
+        User verifiedUser = userRepository.findByUserid(id);
+        if (verifiedUser != null) {
+            if (verifiedUser.getVerificationCode().equals(verificationCode)) {
+                return verifiedUser;
+            }
         }
         return null;
     }

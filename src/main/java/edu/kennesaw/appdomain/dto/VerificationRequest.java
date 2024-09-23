@@ -4,22 +4,22 @@ import edu.kennesaw.appdomain.User;
 
 public class VerificationRequest {
 
-    private User user;
-    private int verificationCode;
+    private Long userid;
+    private String verificationCode;
 
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userid;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long id) {
+        this.userid = id;
     }
 
-    public int getVerificationCode() {
+    public String getVerificationCode() {
         return verificationCode;
     }
 
-    public void setVerificationCode(int verificationCode) {
+    public void setVerificationCode(String verificationCode) {
         this.verificationCode = verificationCode;
     }
 
