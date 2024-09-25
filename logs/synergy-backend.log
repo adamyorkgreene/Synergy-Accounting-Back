@@ -78,3 +78,123 @@
 2024-09-25T00:28:16.655-04:00  INFO 9156 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
 2024-09-25T00:28:16.658-04:00  INFO 9156 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
 2024-09-25T00:28:16.672-04:00  INFO 9156 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-09-25T00:37:48.092-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Starting FinanceApplicationTests using Java 17.0.9 with PID 9530 (started by adamgreene in /Users/adamgreene/MinecraftPlugins/Synergy-Back-End)
+2024-09-25T00:37:48.096-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-09-25T00:37:49.257-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-25T00:37:49.382-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 113 ms. Found 2 JPA repository interfaces.
+2024-09-25T00:37:50.027-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-09-25T00:37:50.094-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2024-09-25T00:37:50.163-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-09-25T00:37:50.615-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-09-25T00:37:50.653-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-09-25T00:37:51.781-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@75e4fe3c
+2024-09-25T00:37:51.786-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-09-25T00:37:51.884-04:00  WARN 9530 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-09-25T00:37:51.887-04:00  WARN 9530 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2024-09-25T00:37:53.303-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-09-25T00:37:53.308-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T00:37:53.997-04:00  WARN 9530 --- [Synergy-Back-End] [Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-25T00:37:54.644-04:00  INFO 9530 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Started FinanceApplicationTests in 6.968 seconds (process running for 10.181)
+2024-09-25T00:37:55.784-04:00  INFO 9530 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T00:37:55.788-04:00  INFO 9530 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-09-25T00:37:55.809-04:00  INFO 9530 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-09-25T00:52:28.270-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Starting FinanceApplicationTests using Java 17.0.9 with PID 9928 (started by adamgreene in /Users/adamgreene/MinecraftPlugins/Synergy-Back-End)
+2024-09-25T00:52:28.279-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-09-25T00:52:30.182-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-25T00:52:30.269-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 75 ms. Found 2 JPA repository interfaces.
+2024-09-25T00:52:30.932-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-09-25T00:52:31.000-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2024-09-25T00:52:31.050-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-09-25T00:52:31.469-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-09-25T00:52:31.506-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-09-25T00:52:32.654-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6d31f14
+2024-09-25T00:52:32.658-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-09-25T00:52:32.739-04:00  WARN 9928 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-09-25T00:52:32.741-04:00  WARN 9928 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2024-09-25T00:52:34.181-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-09-25T00:52:34.188-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T00:52:34.998-04:00  WARN 9928 --- [Synergy-Back-End] [Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-25T00:52:35.673-04:00  INFO 9928 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Started FinanceApplicationTests in 8.111 seconds (process running for 10.638)
+2024-09-25T00:52:36.642-04:00  INFO 9928 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T00:52:36.647-04:00  INFO 9928 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-09-25T00:52:36.666-04:00  INFO 9928 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-09-25T01:15:40.226-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Starting FinanceApplicationTests using Java 17.0.9 with PID 10444 (started by adamgreene in /Users/adamgreene/MinecraftPlugins/Synergy-Back-End)
+2024-09-25T01:15:40.230-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-09-25T01:15:41.388-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-25T01:15:41.475-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 75 ms. Found 2 JPA repository interfaces.
+2024-09-25T01:15:42.221-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-09-25T01:15:42.293-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2024-09-25T01:15:42.344-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-09-25T01:15:42.908-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-09-25T01:15:42.973-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-09-25T01:15:44.168-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@47b4ac83
+2024-09-25T01:15:44.176-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-09-25T01:15:44.306-04:00  WARN 10444 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-09-25T01:15:44.308-04:00  WARN 10444 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2024-09-25T01:15:45.579-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-09-25T01:15:45.585-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:15:46.315-04:00  WARN 10444 --- [Synergy-Back-End] [Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-25T01:15:46.953-04:00  INFO 10444 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Started FinanceApplicationTests in 7.143 seconds (process running for 10.705)
+2024-09-25T01:15:47.820-04:00  INFO 10444 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:15:47.825-04:00  INFO 10444 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-09-25T01:15:47.840-04:00  INFO 10444 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-09-25T01:19:27.205-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Starting FinanceApplicationTests using Java 17.0.9 with PID 10580 (started by adamgreene in /Users/adamgreene/MinecraftPlugins/Synergy-Back-End)
+2024-09-25T01:19:27.212-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-09-25T01:19:28.350-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-25T01:19:28.445-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 83 ms. Found 2 JPA repository interfaces.
+2024-09-25T01:19:29.072-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-09-25T01:19:29.139-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2024-09-25T01:19:29.184-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-09-25T01:19:29.639-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-09-25T01:19:29.678-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-09-25T01:19:30.382-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@537b3be1
+2024-09-25T01:19:30.392-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-09-25T01:19:30.477-04:00  WARN 10580 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-09-25T01:19:30.479-04:00  WARN 10580 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2024-09-25T01:19:31.837-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-09-25T01:19:31.843-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:19:32.555-04:00  WARN 10580 --- [Synergy-Back-End] [Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-25T01:19:33.207-04:00  INFO 10580 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Started FinanceApplicationTests in 6.414 seconds (process running for 8.854)
+2024-09-25T01:19:34.187-04:00  INFO 10580 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:19:34.192-04:00  INFO 10580 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-09-25T01:19:34.205-04:00  INFO 10580 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-09-25T01:20:34.857-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Starting FinanceApplicationTests using Java 17.0.9 with PID 10623 (started by adamgreene in /Users/adamgreene/MinecraftPlugins/Synergy-Back-End)
+2024-09-25T01:20:34.864-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-09-25T01:20:36.049-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-25T01:20:36.160-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 92 ms. Found 2 JPA repository interfaces.
+2024-09-25T01:20:36.824-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-09-25T01:20:36.904-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2024-09-25T01:20:36.969-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-09-25T01:20:37.510-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-09-25T01:20:37.563-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-09-25T01:20:38.348-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@283e1759
+2024-09-25T01:20:38.353-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-09-25T01:20:38.439-04:00  WARN 10623 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-09-25T01:20:38.442-04:00  WARN 10623 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2024-09-25T01:20:39.641-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-09-25T01:20:39.646-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:20:40.370-04:00  WARN 10623 --- [Synergy-Back-End] [Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-25T01:20:41.003-04:00  INFO 10623 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Started FinanceApplicationTests in 6.573 seconds (process running for 8.997)
+2024-09-25T01:20:41.906-04:00  INFO 10623 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:20:41.909-04:00  INFO 10623 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-09-25T01:20:41.921-04:00  INFO 10623 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-09-25T01:21:21.819-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Starting FinanceApplicationTests using Java 17.0.9 with PID 10655 (started by adamgreene in /Users/adamgreene/MinecraftPlugins/Synergy-Back-End)
+2024-09-25T01:21:21.825-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : No active profile set, falling back to 1 default profile: "default"
+2024-09-25T01:21:22.923-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-25T01:21:23.013-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 78 ms. Found 2 JPA repository interfaces.
+2024-09-25T01:21:23.661-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-09-25T01:21:23.729-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2024-09-25T01:21:23.778-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-09-25T01:21:24.213-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-09-25T01:21:24.247-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-09-25T01:21:24.996-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@56299b0e
+2024-09-25T01:21:24.999-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-09-25T01:21:25.088-04:00  WARN 10655 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-09-25T01:21:25.090-04:00  WARN 10655 --- [Synergy-Back-End] [Test worker] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2024-09-25T01:21:26.279-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-09-25T01:21:26.286-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:21:27.042-04:00  WARN 10655 --- [Synergy-Back-End] [Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-25T01:21:27.701-04:00  INFO 10655 --- [Synergy-Back-End] [Test worker] e.k.appdomain.FinanceApplicationTests    : Started FinanceApplicationTests in 6.292 seconds (process running for 8.763)
+2024-09-25T01:21:28.659-04:00  INFO 10655 --- [Synergy-Back-End] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-25T01:21:28.663-04:00  INFO 10655 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-09-25T01:21:28.674-04:00  INFO 10655 --- [Synergy-Back-End] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

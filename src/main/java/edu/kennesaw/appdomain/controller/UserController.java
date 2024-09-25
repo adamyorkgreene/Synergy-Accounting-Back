@@ -1,5 +1,7 @@
 package edu.kennesaw.appdomain.controller;
 
+import edu.kennesaw.appdomain.dto.EmailObject;
+import edu.kennesaw.appdomain.dto.NewPasswordRequest;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.dto.RegistrationRequest;
@@ -55,9 +57,8 @@ public class UserController {
     }
 
     @PostMapping("/request-password-reset")
-    public ResponseEntity<String> requestResetPassword(@RequestBody String email) {
-        email = email.replaceAll("\"", "");
-        User user = userService.getUserFromEmail(email);
+    public ResponseEntity<String> requestResetPassword(@RequestBody EmailObject email) {
+        User user = userService.getUserFromEmail(email.getEmail());
         if (user != null) {
             String token = UUID.randomUUID().toString();
             System.out.println(token);
@@ -80,13 +81,14 @@ public class UserController {
     }
 
     @PostMapping("/password-reset")
-    public ResponseEntity<String> resetPassword(@RequestParam("token") String token, @RequestParam("newPassword") String newPassword) {
+    public ResponseEntity<String> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password) {
         PasswordResetToken resetToken = tokenRepository.findByToken(token);
         if (resetToken == null || resetToken.getExpiryDate().before(new Date())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         User user = resetToken.getUser();
-        user.setPassword(newPassword);
+        user.setPassword(password.getPassword());
+        user.setFailedLoginAttempts(0);
         userRepository.save(user);
         tokenRepository.delete(resetToken);
         return ResponseEntity.ok("Password Reset Successfully");
