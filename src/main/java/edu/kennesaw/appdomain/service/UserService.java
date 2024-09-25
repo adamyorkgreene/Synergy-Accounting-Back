@@ -55,12 +55,21 @@ public class UserService {
                 new ErrorResponse("An account already exists using this email."));
     }
 
-    public User loginUser(String username, String password) {
+    public ResponseEntity<?> loginUser(String username, String password) {
         User user = userRepository.findByUsername(username);
-        if (user != null && user.getPassword().equals(password)) {
-            return user;
+        if (user != null) {
+            if (user.getPassword().equals(password)) {
+                if (user.getFailedLoginAttempts() < 3) {
+                    user.setFailedLoginAttempts(0);
+                    return ResponseEntity.ok(userRepository.save(user));
+                }
+                return ResponseEntity.status(HttpStatus.LOCKED).body("Your account has been locked. Please reset your password.");
+            }
+            user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+            userRepository.save(user);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect password!");
         }
-        return null;
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not exist!");
     }
 
     public User verifyUser(Long id, String verificationCode) {
@@ -85,7 +94,6 @@ public class UserService {
         resetToken.setToken(token);
         resetToken.setExpiryDate(30);
         tokenRepository.save(resetToken);
-        System.out.println("Password Reset Token Saved");
     }
 
 }

@@ -29,6 +29,9 @@ public class User {
     @Column(nullable = false, columnDefinition = "TINYINT(1)")
     private boolean isVerified;
 
+    @Column(nullable = false)
+    private int failedLoginAttempts;
+
     public User() {
         Random ran = new Random();
         verificationCode = ran.nextInt(999999) + "";
@@ -78,6 +81,16 @@ public class User {
     @JsonProperty("isVerified")
     public boolean isVerified() {
         return isVerified;
+    }
+
+    @JsonProperty("failedLoginAttempts")
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    @JsonProperty("failedLoginAttempts")
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
     }
 
 }

@@ -41,12 +41,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> loginUser(@RequestBody User user) {
-        User loggedInUser = userService.loginUser(user.getUsername(), user.getPassword());
-        if (loggedInUser != null) {
-            return ResponseEntity.ok(loggedInUser);
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<?> loginUser(@RequestBody User user) {
+        return userService.loginUser(user.getUsername(), user.getPassword());
     }
 
     @PostMapping("/verify")
@@ -63,7 +59,6 @@ public class UserController {
         email = email.replaceAll("\"", "");
         User user = userService.getUserFromEmail(email);
         if (user != null) {
-            System.out.println("User is not null");
             String token = UUID.randomUUID().toString();
             System.out.println(token);
             userService.savePasswordResetToken(user, token);
@@ -71,7 +66,6 @@ public class UserController {
             emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
             return ResponseEntity.ok("Password reset link has been sent.");
         }
-        System.out.println("User is null");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
