@@ -1,4 +1,4 @@
-package edu.kennesaw.appdomain;
+package edu.kennesaw.appdomain.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;

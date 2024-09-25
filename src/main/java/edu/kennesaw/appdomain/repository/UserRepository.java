@@ -1,6 +1,6 @@
 package edu.kennesaw.appdomain.repository;
 
-import edu.kennesaw.appdomain.User;
+import edu.kennesaw.appdomain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

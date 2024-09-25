@@ -1,7 +1,9 @@
 package edu.kennesaw.appdomain.service;
 
-import edu.kennesaw.appdomain.User;
+import edu.kennesaw.appdomain.entity.PasswordResetToken;
+import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.dto.ErrorResponse;
+import edu.kennesaw.appdomain.repository.TokenRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TokenRepository tokenRepository;
 
     @Autowired
     private EmailService ems;
@@ -28,7 +33,7 @@ public class UserService {
                         if (!username.isBlank() && !username.contains(" ")) {
                             if (password.length() > 5 && !password.contains(" ")) {
                                 User registeredUser = userRepository.save(user);
-                                ems.sendNoReplyEmail(email, "Your verification code: " + registeredUser.getVerificationCode());
+                                ems.sendNoReplyEmail(email, registeredUser.getVerificationCode());
                                 return ResponseEntity.ok(registeredUser);
                             }
                             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -69,4 +74,18 @@ public class UserService {
         }
         return null;
     }
+
+    public User getUserFromEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public void savePasswordResetToken(User user, String token) {
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setUser(user);
+        resetToken.setToken(token);
+        resetToken.setExpiryDate(30);
+        tokenRepository.save(resetToken);
+        System.out.println("Password Reset Token Saved");
+    }
+
 }

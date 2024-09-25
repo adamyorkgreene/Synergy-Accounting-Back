@@ -1,7 +1,5 @@
 package edu.kennesaw.appdomain.dto;
 
-import edu.kennesaw.appdomain.User;
-
 public class VerificationRequest {
 
     private Long userid;
