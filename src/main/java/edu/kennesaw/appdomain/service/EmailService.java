@@ -17,12 +17,12 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void sendNoReplyEmail(String to, String verificationCode) {
+    public void sendVerificationEmail(String to, String verifyLink) {
         MimeMessage mm = mailSender.createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
             helper.setTo(to);
-            helper.setSubject("Your Verification Code");
+            helper.setSubject("Your Verification Link");
             helper.setText(
                     "<html>" +
                             "<head>" +
@@ -36,10 +36,10 @@ public class EmailService {
                                 "<div>" +
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
-                                "<h1>" + "Your Verification Code" + "</h1>" +
-                                "<h2>" + verificationCode + "</h2>" +
+                                "<h2>" + "Open this link to verify your account:" + "</h2>" +
+                                "<h2>" + verifyLink + "</h2>" +
                             "</body>" +
-                         "</html>",
+                        "</html>",
                     true);
             sendFormattedEmail(mm, helper);
         } catch (MessagingException e) {
@@ -66,7 +66,7 @@ public class EmailService {
                                 "<div>" +
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
-                                "<h2>" + "Click this link to reset your password:" + "</h2>" +
+                                "<h2>" + "Open this link to reset your password:" + "</h2>" +
                                 "<h2>" + resetLink + "</h2>" +
                             "</body>" +
                         "</html>",
@@ -86,7 +86,7 @@ public class EmailService {
             helper.setText("The following user has registered for SynergyAccounting and must be approved: \n"
                     + "First Name: " + user.getFirstName() + "\n"
                     + "Last Name: " + user.getLastName() + "\n"
-                    + "DOB: " + user.getBirthday() + "/" + user.getBirthMonth() + "/" + user.getBirthYear() + "\n"
+                    + "DOB: " + user.getBirthMonth() + "/" + user.getBirthday() + "/" + user.getBirthYear() + "\n"
                     + "Email Address: " + user.getEmail() + "\n"
                     + "Home Address: " + user.getAddress() + "\n"
                     + "Please approve verification using this link: " + confirmationLink

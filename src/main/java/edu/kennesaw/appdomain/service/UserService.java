@@ -4,9 +4,11 @@ import edu.kennesaw.appdomain.entity.ConfirmationToken;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.dto.ErrorResponse;
+import edu.kennesaw.appdomain.entity.VerificationToken;
 import edu.kennesaw.appdomain.repository.ConfirmationRepository;
 import edu.kennesaw.appdomain.repository.TokenRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
+import edu.kennesaw.appdomain.repository.VerificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,9 @@ public class UserService {
     private ConfirmationRepository confirmationRepository;
 
     @Autowired
+    private VerificationRepository verificationRepository;
+
+    @Autowired
     private EmailService ems;
 
     public ResponseEntity<?> registerUser(User user, String confpassword) {
@@ -35,7 +40,6 @@ public class UserService {
                 if (email.contains("@") && email.contains(".") && !email.contains(" ") && email.length() > 6) {
                     if (password.length() > 5 && !password.contains(" ")) {
                         User registeredUser = userRepository.save(user);
-                        ems.sendNoReplyEmail(email, registeredUser.getVerificationCode());
                         return ResponseEntity.ok(registeredUser);
                     }
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -82,6 +86,14 @@ public class UserService {
 
     public User getUserFromEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public void saveVerificationToken(User user, String token) {
+        VerificationToken verifyToken = new VerificationToken();
+        verifyToken.setUser(user);
+        verifyToken.setToken(token);
+        verifyToken.setExpiryDate(30);
+        verificationRepository.save(verifyToken);
     }
 
     public void savePasswordResetToken(User user, String token) {

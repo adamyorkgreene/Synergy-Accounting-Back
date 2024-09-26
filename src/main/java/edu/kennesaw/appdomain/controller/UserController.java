@@ -5,9 +5,11 @@ import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.ConfirmationToken;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
 import edu.kennesaw.appdomain.entity.User;
+import edu.kennesaw.appdomain.entity.VerificationToken;
 import edu.kennesaw.appdomain.repository.ConfirmationRepository;
 import edu.kennesaw.appdomain.repository.TokenRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
+import edu.kennesaw.appdomain.repository.VerificationRepository;
 import edu.kennesaw.appdomain.service.EmailService;
 import edu.kennesaw.appdomain.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,8 @@ public class UserController {
     private UserRepository userRepository;
     @Autowired
     private ConfirmationRepository confirmationRepository;
+    @Autowired
+    private VerificationRepository verificationRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest) {
@@ -67,16 +71,6 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User user) {
         return userService.loginUser(user.getEmail(), user.getPassword());
-    }
-
-    @PostMapping("/verify")
-    public ResponseEntity<User> verifyUser(@RequestBody VerificationRequest verificationRequest) {
-        User verifiedUser = userService.verifyUser(verificationRequest.getUserId(), verificationRequest.getVerificationCode());
-        if (verifiedUser != null) {
-            System.out.println("Userid: " + verifiedUser.getUserid());
-            return ResponseEntity.ok(verifiedUser);
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @PostMapping("/request-password-reset")
@@ -118,11 +112,8 @@ public class UserController {
     @PostMapping("/request-confirm-user")
     public ResponseEntity<String> requestConfirmUser(@RequestBody ConfirmationRequest cr) {
         User user = userRepository.findByUserid(cr.getUserid());
-        System.out.println(cr.getUserid());
         if (user != null) {
-            System.out.println(user.getFirstName());
             String token = UUID.randomUUID().toString();
-            System.out.println(token);
             userService.saveConfirmationToken(user, token);
             String confirmLink = "https://synergyaccounting.app/confirm-user?token=" + token;
             List<User> admins = userRepository.findAll()
@@ -143,7 +134,6 @@ public class UserController {
             }
             return ResponseEntity.ok("Confirmation email has been sent.");
         }
-        System.out.println("USER IS NULL");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
@@ -158,6 +148,32 @@ public class UserController {
         userRepository.save(user);
         confirmationRepository.delete(confToken);
         return ResponseEntity.ok("Token is Valid.");
+    }
+
+    @PostMapping("/verify-request")
+    public ResponseEntity<String> requestVerification(@RequestBody VerificationRequest vr) {
+        User user = userRepository.findByUserid(vr.getUserid());
+        if (user != null) {
+            String token = UUID.randomUUID().toString();
+            userService.saveVerificationToken(user, token);
+            String confirmLink = "https://synergyaccounting.app/verify?token=" + token;
+            emailService.sendVerificationEmail(user.getEmail(), confirmLink);
+            return ResponseEntity.ok("A verification link has been sent to your email.");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyUser(@RequestParam("token") String token) {
+        VerificationToken verifyToken = verificationRepository.findByToken(token);
+        if (verifyToken == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        User user = verifyToken.getUser();
+        user.setIsVerified(true);
+        userRepository.save(user);
+        verificationRepository.delete(verifyToken);
+        return ResponseEntity.ok(user);
     }
 
 }

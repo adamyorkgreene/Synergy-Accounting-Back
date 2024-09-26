@@ -2,23 +2,14 @@ package edu.kennesaw.appdomain.dto;
 
 public class VerificationRequest {
 
-    private Long userid;
-    private String verificationCode;
+    private long userid;
 
-    public Long getUserId() {
+    public void setUserid(long userid) {
+        this.userid = userid;
+    }
+
+    public Long getUserid() {
         return userid;
-    }
-
-    public void setUserId(Long id) {
-        this.userid = id;
-    }
-
-    public String getVerificationCode() {
-        return verificationCode;
-    }
-
-    public void setVerificationCode(String verificationCode) {
-        this.verificationCode = verificationCode;
     }
 
 }
