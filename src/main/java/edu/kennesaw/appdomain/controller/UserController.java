@@ -97,16 +97,7 @@ public class UserController {
 
     @PostMapping("/password-reset")
     public ResponseEntity<String> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token);
-        if (resetToken == null || resetToken.getExpiryDate().before(new Date())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        User user = resetToken.getUser();
-        user.setPassword(password.getPassword());
-        user.setFailedLoginAttempts(0);
-        userRepository.save(user);
-        tokenRepository.delete(resetToken);
-        return ResponseEntity.ok("Password Reset Successfully");
+        return userService.resetPassword(token, password.getPassword());
     }
 
     @PostMapping("/request-confirm-user")

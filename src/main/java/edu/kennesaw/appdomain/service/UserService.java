@@ -12,7 +12,11 @@ import edu.kennesaw.appdomain.repository.VerificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 @Service
 public class UserService {
@@ -29,8 +33,7 @@ public class UserService {
     @Autowired
     private VerificationRepository verificationRepository;
 
-    @Autowired
-    private EmailService ems;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public ResponseEntity<?> registerUser(User user, String confpassword) {
         String email = user.getEmail();
@@ -39,6 +42,7 @@ public class UserService {
             if (password.equals(confpassword)) {
                 if (email.contains("@") && email.contains(".") && !email.contains(" ") && email.length() > 6) {
                     if (password.length() > 5 && !password.contains(" ")) {
+                        user.setPassword(passwordEncoder.encode(password));
                         User registeredUser = userRepository.save(user);
                         return ResponseEntity.ok(registeredUser);
                     }
@@ -58,7 +62,7 @@ public class UserService {
     public ResponseEntity<?> loginUser(String email, String password) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
-            if (user.getPassword().equals(password)) {
+            if (passwordEncoder.matches(password, user.getPassword())) {
                 if (user.getFailedLoginAttempts() < 3) {
                     user.setFailedLoginAttempts(0);
                     return ResponseEntity.ok(userRepository.save(user));
@@ -72,16 +76,17 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not exist!");
     }
 
-    public User verifyUser(Long id, String verificationCode) {
-        User verifiedUser = userRepository.findByUserid(id);
-        if (verifiedUser != null) {
-            if (verifiedUser.getVerificationCode().equals(verificationCode)) {
-                verifiedUser.setIsVerified(true);
-                userRepository.save(verifiedUser);
-                return verifiedUser;
-            }
+    public ResponseEntity<String> resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = tokenRepository.findByToken(token);
+        if (resetToken == null || resetToken.getExpiryDate().before(new Date())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        return null;
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setFailedLoginAttempts(0);
+        userRepository.save(user);
+        tokenRepository.delete(resetToken);
+        return ResponseEntity.ok("Password Reset Successfully");
     }
 
     public User getUserFromEmail(String email) {
