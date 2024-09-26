@@ -1,8 +1,10 @@
 package edu.kennesaw.appdomain.service;
 
+import edu.kennesaw.appdomain.entity.ConfirmationToken;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.dto.ErrorResponse;
+import edu.kennesaw.appdomain.repository.ConfirmationRepository;
 import edu.kennesaw.appdomain.repository.TokenRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,43 +22,37 @@ public class UserService {
     private TokenRepository tokenRepository;
 
     @Autowired
+    private ConfirmationRepository confirmationRepository;
+
+    @Autowired
     private EmailService ems;
 
     public ResponseEntity<?> registerUser(User user, String confpassword) {
         String email = user.getEmail();
-        String username = user.getUsername();
         String password = user.getPassword();
         if (userRepository.findByEmail(email) == null) {
-            if (userRepository.findByUsername(username) == null) {
-                if (password.equals(confpassword)) {
-                    if (email.contains("@") && email.contains(".") && !email.contains(" ")) {
-                        if (!username.isBlank() && !username.contains(" ")) {
-                            if (password.length() > 5 && !password.contains(" ")) {
-                                User registeredUser = userRepository.save(user);
-                                ems.sendNoReplyEmail(email, registeredUser.getVerificationCode());
-                                return ResponseEntity.ok(registeredUser);
-                            }
-                            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                                    new ErrorResponse("Password must be at least 6 characters and not contain spaces."));
-                        }
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                                new ErrorResponse("Username cannot be blank or contain spaces"));
+            if (password.equals(confpassword)) {
+                if (email.contains("@") && email.contains(".") && !email.contains(" ") && email.length() > 6) {
+                    if (password.length() > 5 && !password.contains(" ")) {
+                        User registeredUser = userRepository.save(user);
+                        ems.sendNoReplyEmail(email, registeredUser.getVerificationCode());
+                        return ResponseEntity.ok(registeredUser);
                     }
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                            new ErrorResponse("Email address is invalid."));
+                            new ErrorResponse("Password must be at least 6 characters and not contain spaces."));
                 }
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        new ErrorResponse("Passwords do not match."));
+                        new ErrorResponse("Email address is invalid."));
             }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                    new ErrorResponse("This username already exists."));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ErrorResponse("Passwords do not match."));
         }
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
                 new ErrorResponse("An account already exists using this email."));
     }
 
-    public ResponseEntity<?> loginUser(String username, String password) {
-        User user = userRepository.findByUsername(username);
+    public ResponseEntity<?> loginUser(String email, String password) {
+        User user = userRepository.findByEmail(email);
         if (user != null) {
             if (user.getPassword().equals(password)) {
                 if (user.getFailedLoginAttempts() < 3) {
@@ -94,6 +90,14 @@ public class UserService {
         resetToken.setToken(token);
         resetToken.setExpiryDate(30);
         tokenRepository.save(resetToken);
+    }
+
+    public void saveConfirmationToken(User user, String token) {
+        ConfirmationToken confToken = new ConfirmationToken();
+        confToken.setUser(user);
+        confToken.setToken(token);
+        confToken.setExpiryDate(30);
+        confirmationRepository.save(confToken);
     }
 
 }
