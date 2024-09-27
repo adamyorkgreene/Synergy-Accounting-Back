@@ -1,10 +1,10 @@
 package edu.kennesaw.appdomain.dto;
 
-public class ErrorResponse {
+public class MessageResponse {
 
     private String message;
 
-    public ErrorResponse(String message) {
+    public MessageResponse(String message) {
         this.message = message;
     }
 
