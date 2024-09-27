@@ -55,6 +55,9 @@ public class User {
     @Column(nullable = false)
     private int failedLoginAttempts;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PasswordHistory> passwordHistories;
+
     public User() {
         Random ran = new Random();
         verificationCode = ran.nextInt(999999) + "";
@@ -165,6 +168,10 @@ public class User {
     @JsonProperty("failedLoginAttempts")
     public void setFailedLoginAttempts(int failedLoginAttempts) {
         this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public List<PasswordHistory> getPasswordHistories() {
+        return passwordHistories;
     }
 
     @JsonProperty("failedLoginAttempts")

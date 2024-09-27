@@ -106,11 +106,39 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         User user = resetToken.getUser();
+
+// Check if the new password has been used previously
+        if (isPasswordInHistory(user, newPassword)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new MessageResponse("New password cannot be the same as any previously used password."));
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setFailedLoginAttempts(0);
         userRepository.save(user);
         tokenRepository.delete(resetToken);
+
+// Save the new password in history
+        saveNewPasswordToHistory(user, newPassword);
+
         return ResponseEntity.ok(new MessageResponse("Password reset was successful!"));
+    }
+
+// Check if the password was used before
+    private boolean isPasswordInHistory(User user, String newPassword) {
+        List<String> oldPasswords = userRepository.findAllPasswordsByUserId(user.getID());
+
+        for (String oldPassword : oldPasswords) {
+            if (passwordEncoder.matches(newPassword, oldPassword)) {
+                return true; // The new password is in the history
+            }
+        }
+        return false; // The new password can be used
+    }
+
+// Save user password in history after pass. reset
+    private void saveNewPasswordToHistory(User user, String newPassword) {
+        userRepository.saveNewPassword(user.getId(), passwordEncoder.encode(newPassword));
     }
 
     public User getUserFromEmail(String email) {

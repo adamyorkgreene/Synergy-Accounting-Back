@@ -3,6 +3,7 @@ package edu.kennesaw.appdomain.controller;
 import edu.kennesaw.appdomain.UserType;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.ConfirmationToken;
+import edu.kennesaw.appdomain.entity.PasswordHistory;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.entity.VerificationToken;
@@ -145,6 +146,17 @@ public class UserController {
 
     @PostMapping("/password-reset")
     public ResponseEntity<MessageResponse> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password, HttpServletRequest request) {
+// Check password history before resetting
+        User user = userService.getUserFromEmail();
+        List<String> previousPasswords = userRepository.findAllPasswordsByUserId(user.getUserid());
+
+// Check if new password is in history
+        if (previousPasswords.contains(password.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("New password cannot be the same as any of the last paswords."));
+        }
+// Save new password to history
+        userRepository.saveNewPassword(user, password.getPassword());
+
         return userService.resetPassword(token, password.getPassword());
     }
 
