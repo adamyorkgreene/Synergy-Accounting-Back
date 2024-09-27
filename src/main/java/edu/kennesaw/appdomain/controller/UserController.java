@@ -149,16 +149,17 @@ public class UserController {
     }
 
     @GetMapping("/confirm-user")
-    public ResponseEntity<String> confirmUser(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token, HttpServletRequest request) {
         ConfirmationToken confToken = confirmationRepository.findByToken(token);
-        if (confToken == null || confToken.getExpiryDate().before(new Date())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (confToken == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Confirmation" +
+                    " Token\nThis user is already confirmed, or the link is incorrect."));
         }
         User user = confToken.getUser();
         user.setUserType(UserType.USER);
         userRepository.save(user);
         confirmationRepository.delete(confToken);
-        return ResponseEntity.ok("Token is Valid.");
+        return ResponseEntity.ok(new MessageResponse("User has been confirmed!"));
     }
 
     @GetMapping("/verify")
