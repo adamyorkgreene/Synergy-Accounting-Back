@@ -5,6 +5,7 @@ import edu.kennesaw.appdomain.UserType;
 import jakarta.persistence.*;
 
 import java.util.Random;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -58,11 +59,18 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PasswordHistory> passwordHistories;
 
+// Password expiration feature
+    @Column(nullable = false)
+    private LocalDateTime passwordLastUpdated;
+
+    private final int PASSWORD_EXPIRY_DAYS = 90;
+
     public User() {
         Random ran = new Random();
         verificationCode = ran.nextInt(999999) + "";
         userType = UserType.DEFAULT;
         setIsVerified(false);
+        this.passwordLastUpdated = LocalDateTime.now();
     }
 
     public void setUserid(Long id) {
@@ -160,6 +168,18 @@ public class User {
         this.isVerified = isVerified;
     }
 
+    public LocalDateTime getPasswordLastUpdated() {
+        return passwordLastUpdated;
+    }
+
+    public void setPasswordLastUpdated(LocalDateTime passwordLastUpdated) {
+        this.passwordLastUpdated = passwordLastUpdated;
+    }
+
+    public int getPasswordExpiryDays() {
+        return PASSWORD_EXPIRY_DAYS;
+    }
+
     @JsonProperty("isVerified")
     public boolean isVerified() {
         return isVerified;
@@ -177,6 +197,11 @@ public class User {
     @JsonProperty("failedLoginAttempts")
     public int getFailedLoginAttempts() {
         return failedLoginAttempts;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+        this.passwordLastUpdated = LocalDateTime.now();
     }
 
 }

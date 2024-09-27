@@ -19,7 +19,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -53,6 +56,7 @@ public class UserService {
                 if (email.contains("@") && email.contains(".") && !email.contains(" ") && email.length() > 6) {
                     if (password.length() >= 8 && !password.contains(" ")) {
                         user.setPassword(passwordEncoder.encode(password));
+                        user.setPasswordLastUpdated(LocalDateTime.now());
                         userRepository.save(user);
                         String token = UUID.randomUUID().toString();
                         saveVerificationToken(user, token);
@@ -115,6 +119,7 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setFailedLoginAttempts(0);
+        user.setPasswordLastUpdated(LocalDateTime.now());
         userRepository.save(user);
         tokenRepository.delete(resetToken);
 
@@ -167,6 +172,25 @@ public class UserService {
         confToken.setToken(token);
         confToken.setExpiryDate(30);
         confirmationRepository.save(confToken);
+    }
+
+    // Method to notify user about upcoming password expiration
+    public void notifyUsersAboutPasswordExpiration() {
+        List<User> users = userRepository.findAll(); 
+        LocalDateTime now = LocalDateTime.now(); 
+
+        for (User user : users) {
+            LocalDateTime passwordLastUpdated = user.getPasswordLastUpdated(); 
+            if (passwordLastUpdated != null) {
+
+                long daysSinceLastUpdate = ChronoUnit.DAYS.between(passwordLastUpdated, now);
+               
+                if (daysSinceLastUpdate >= (user.getPasswordExpiryDays() - 3)) {
+
+                    emailService.sendPasswordExpirationNotification(user.getEmail(), user.getUsername());
+                }
+            }
+        }
     }
 
 }

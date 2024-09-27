@@ -97,6 +97,37 @@ public class EmailService {
         }
     }
 
+     // Send a notification email to the user about password expiration.
+    public void sendPasswordExpirationNotification(String to, String username) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Password Expiration Warning");
+            helper.setText(
+                    "<html>" +
+                            "<head>" +
+                                "<style>" +
+                                    "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
+                                    "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "div { text-align: center; }" +
+                                "</style>" +
+                            "</head>" +
+                            "<body>" +
+                                "<div>" +
+                                    "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
+                                "</div>" +
+                                "<h2>Dear " + username + ",</h2>" +
+                                "<h2>Your password will expire in 3 days. Please update it to maintain access.</h2>" +
+                            "</body>" +
+                        "</html>",
+                    true);
+            sendFormattedEmail(mm, helper);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+
     private void sendFormattedEmail(MimeMessage mm, MimeMessageHelper helper) throws MessagingException {
         ClassPathResource res = new ClassPathResource("static/images/synergylogo.png");
         helper.setFrom("noreply@synergyaccounting.app");

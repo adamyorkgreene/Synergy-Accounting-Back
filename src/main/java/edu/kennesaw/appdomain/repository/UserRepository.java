@@ -24,4 +24,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("INSERT INTO PasswordHistory (user, password, createdAt) VALUES (:user, :password, CURRENT_TIMESTAMP)")
     void saveNewPassword(@Param("user") User user, @Param("password") String password);
+
+// Retrieve users whose password expires in the next 3 days
+    @Query("SELECT u FROM User u WHERE u.passwordExpiryDate BETWEEN :currentDate AND :expiryDate")
+    List<User> findUsersWithExpiringPasswords(@Param("currentDate") LocalDateTime currentDate, 
+                                               @Param("expiryDate") LocalDateTime expiryDate);
+
 }
