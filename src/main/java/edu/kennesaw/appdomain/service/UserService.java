@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.service;
 
+import edu.kennesaw.appdomain.UserType;
 import edu.kennesaw.appdomain.dto.LoginRequest;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.RegistrationRequest;
@@ -11,6 +12,7 @@ import edu.kennesaw.appdomain.repository.ConfirmationRepository;
 import edu.kennesaw.appdomain.repository.TokenRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.repository.VerificationRepository;
+import edu.kennesaw.appdomain.service.utils.ServiceUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,20 +62,7 @@ public class UserService {
         user.setBirthYear(registrationRequest.getBirthYear());
         user.setAddress(registrationRequest.getAddress());
         user.setPassword(registrationRequest.getPassword());
-        GregorianCalendar gc = new GregorianCalendar();
-        SimpleDateFormat year = new SimpleDateFormat("yy");
-        SimpleDateFormat month = new SimpleDateFormat("MM");
-        String username = registrationRequest.getFirstName().charAt(0) + registrationRequest.getLastName()
-                + month.format(gc.getTime()) + year.format(gc.getTime()
-        );
-        if (userRepository.findByUsername(username) != null) {
-            int increment = 1;
-            while (userRepository.findByUsername(username) != null) {
-                username += "-" + increment;
-                increment++;
-            }
-        }
-        user.setUsername(username);
+        user.setUsername(ServiceUtils.generateUsername(registrationRequest.getFirstName(), registrationRequest.getLastName(), userRepository));
         String email = user.getEmail();
         String password = user.getPassword();
         if (userRepository.findByEmail(email) == null) {
@@ -168,10 +157,6 @@ public class UserService {
         return ResponseEntity.ok(new MessageResponse("Password reset was successful!"));
     }
 
-    public User getUserFromEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
-
     public void saveVerificationToken(User user, String token) {
         VerificationToken verifyToken = new VerificationToken();
         verifyToken.setUser(user);
@@ -194,6 +179,20 @@ public class UserService {
         confToken.setToken(token);
         confToken.setExpiryDate(30);
         confirmationRepository.save(confToken);
+    }
+
+    public ResponseEntity<MessageResponse> sendResetPasswordEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            String token = UUID.randomUUID().toString();
+            savePasswordResetToken(user, token);
+            String resetLink = "https://synergyaccounting.app/password-reset?token=" + token;
+            emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+            return ResponseEntity.ok(new MessageResponse("A link to reset your password has been sent" +
+                    " to your email.")
+            );
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Invalid email address."));
     }
 
 }

@@ -35,6 +35,8 @@ public class SecurityConfig {
                                         "/api/users/verify", "/api/users/verify-request", "/api/users/password-reset", "/api/users/request-password-reset",
                                         "/api/users/request-confirm-user", "/api/users/confirm-user", "/api/csrf").permitAll()
                         .requestMatchers("/dashboard").authenticated()
+                                .requestMatchers("/admin/**").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/manager/**").hasRole("MANAGER")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .logout(logout -> logout.logoutUrl("/api/users/logout").logoutSuccessUrl("/api/users/login").permitAll());

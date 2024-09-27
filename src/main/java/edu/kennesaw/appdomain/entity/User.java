@@ -52,6 +52,9 @@ public class User {
     @Column(nullable = false, columnDefinition = "TINYINT(1)")
     private boolean isVerified;
 
+    @Column(nullable = false, columnDefinition = "TINYINT(1)")
+    private boolean isActive;
+
     @Column(nullable = false)
     private int failedLoginAttempts;
 
@@ -170,6 +173,15 @@ public class User {
     @JsonProperty("failedLoginAttempts")
     public int getFailedLoginAttempts() {
         return failedLoginAttempts;
+    }
+
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 
 }

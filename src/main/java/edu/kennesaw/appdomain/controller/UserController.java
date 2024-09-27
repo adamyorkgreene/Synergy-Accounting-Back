@@ -63,16 +63,7 @@ public class UserController {
 
     @PostMapping("/request-password-reset")
     public ResponseEntity<MessageResponse> requestResetPassword(@RequestBody EmailObject email, HttpServletRequest request) {
-        User user = userService.getUserFromEmail(email.getEmail());
-        if (user != null) {
-            String token = UUID.randomUUID().toString();
-            userService.savePasswordResetToken(user, token);
-            String resetLink = "https://synergyaccounting.app/password-reset?token=" + token;
-            emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
-            return ResponseEntity.ok(new MessageResponse("A link to reset your password has been sent" +
-                    " to your email."));
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Invalid email address."));
+        return userService.sendResetPasswordEmail(email.getEmail());
     }
 
     @GetMapping("/password-reset")
