@@ -29,6 +29,7 @@ public class EmailService {
                                 "<style>" +
                                     "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
                                     "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
                                     "div { text-align: center; }" +
                                 "</style>" +
                             "</head>" +
@@ -36,8 +37,8 @@ public class EmailService {
                                 "<div>" +
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
-                                "<h2>" + "Open this link to verify your account:" + "</h2>" +
-                                "<h2>" + verifyLink + "</h2>" +
+                                "<h2>" + "Click here to verify your account:" + "</h2>" +
+                                "<a href=\"" + verifyLink + "\">Verify my Account</a>" +
                             "</body>" +
                         "</html>",
                     true);
@@ -59,6 +60,7 @@ public class EmailService {
                                 "<style>" +
                                     "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
                                     "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
                                     "div { text-align: center; }" +
                                 "</style>" +
                             "</head>" +
@@ -67,7 +69,7 @@ public class EmailService {
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
                                 "<h2>" + "Open this link to reset your password:" + "</h2>" +
-                                "<h2>" + resetLink + "</h2>" +
+                            "<a href=\"" + resetLink + "\">Reset my Password</a>" +
                             "</body>" +
                         "</html>",
                     true);
@@ -91,6 +93,39 @@ public class EmailService {
                     + "Home Address: " + user.getAddress() + "\n"
                     + "Please approve verification using this link: " + confirmationLink
             );
+            sendFormattedEmail(mm, helper);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+
+    public void sendApprovalEmail(String to) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Your Account has been Approved");
+            helper.setText(
+                    "<html>" +
+                            "<head>" +
+                                "<style>" +
+                                    "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
+                                    "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "div { text-align: center; }" +
+                                "</style>" +
+                            "</head>" +
+                            "<body>" +
+                                "<div>" +
+                                    "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
+                                "</div>" +
+                                "<h2><h2/>" +
+                                "<h2>" + "Your account is ready to be used!" + "</h2>" +
+                                "<h2><h2/>" +
+                                "<a href=\"https://synergyaccounting.app/login\">Click here to Login</a>" +
+                            "</body>" +
+                         "</html>",
+                    true);
             sendFormattedEmail(mm, helper);
         } catch (MessagingException e) {
             System.err.println("Error sending email: " + e.getMessage());

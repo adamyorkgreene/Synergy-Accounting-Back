@@ -17,19 +17,12 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,67 +44,21 @@ public class UserController {
     private ConfirmationRepository confirmationRepository;
     @Autowired
     private VerificationRepository verificationRepository;
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest, HttpServletRequest request) {
-        User user = new User();
-        user.setEmail(registrationRequest.getEmail());
-        user.setFirstName(registrationRequest.getFirstName());
-        user.setLastName(registrationRequest.getLastName());
-        user.setBirthday(registrationRequest.getBirthday());
-        user.setBirthMonth(registrationRequest.getBirthMonth());
-        user.setBirthYear(registrationRequest.getBirthYear());
-        user.setAddress(registrationRequest.getAddress());
-        user.setPassword(registrationRequest.getPassword());
-        GregorianCalendar gc = new GregorianCalendar();
-        SimpleDateFormat year = new SimpleDateFormat("yy");
-        SimpleDateFormat month = new SimpleDateFormat("MM");
-        String username = registrationRequest.getFirstName().charAt(0) + registrationRequest.getLastName() + month.format(gc.getTime()) + year.format(gc.getTime());
-        if (userRepository.findByUsername(username) != null) {
-            int increment = 1;
-            while (userRepository.findByUsername(username) != null) {
-                username += "-" + increment;
-                increment++;
-            }
-        }
-        user.setUsername(username);
-        return userService.registerUser(user, registrationRequest.getConfpassword());
+        return userService.registerUser(registrationRequest);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest user, HttpServletRequest request) {
-        try {
+        HttpSession session = request.getSession(true);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
-            );
+        System.out.println("Session ID: " + session.getId());
+        System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            HttpSession session = request.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
-
-            System.out.println("Session ID: " + session.getId());
-            System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
-
-            return userService.loginUser(user.getEmail(), user.getPassword());
-
-        } catch (BadCredentialsException e) {
-            User invalidUser = userRepository.findByEmail(user.getEmail());
-            if (invalidUser != null) {
-                invalidUser.setFailedLoginAttempts(invalidUser.getFailedLoginAttempts() + 1);
-                userRepository.save(invalidUser);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new MessageResponse("Invalid username or password!"));
-            }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageResponse("This email does not exist in our database!"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("An error occurred during login"));
-        }
+        return userService.loginUser(user);
     }
 
     @PostMapping("/request-password-reset")
@@ -159,6 +106,7 @@ public class UserController {
         user.setUserType(UserType.USER);
         userRepository.save(user);
         confirmationRepository.delete(confToken);
+        emailService.sendApprovalEmail(user.getEmail());
         return ResponseEntity.ok(new MessageResponse("User has been confirmed!"));
     }
 
