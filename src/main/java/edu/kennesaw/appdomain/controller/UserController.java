@@ -17,11 +17,15 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +50,7 @@ public class UserController {
     private VerificationRepository verificationRepository;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest, HttpServletRequest request) {
+    public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest) {
         return userService.registerUser(registrationRequest);
     }
 
@@ -62,12 +66,12 @@ public class UserController {
     }
 
     @PostMapping("/request-password-reset")
-    public ResponseEntity<MessageResponse> requestResetPassword(@RequestBody EmailObject email, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> requestResetPassword(@RequestBody EmailObject email) {
         return userService.sendResetPasswordEmail(email.getEmail());
     }
 
     @GetMapping("/password-reset")
-    public ResponseEntity<MessageResponse> showPasswordResetForm(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> showPasswordResetForm(@RequestParam("token") String token) {
         PasswordResetToken resetToken = tokenRepository.findByToken(token);
         if (resetToken == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Password " +
@@ -82,12 +86,12 @@ public class UserController {
     }
 
     @PostMapping("/password-reset")
-    public ResponseEntity<MessageResponse> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password) {
         return userService.resetPassword(token, password.getPassword());
     }
 
     @GetMapping("/confirm-user")
-    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token) {
         ConfirmationToken confToken = confirmationRepository.findByToken(token);
         if (confToken == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Confirmation" +
@@ -102,7 +106,7 @@ public class UserController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<MessageResponse> verifyUser(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> verifyUser(@RequestParam("token") String token) {
 
         // Handle Verification Request
 
@@ -163,6 +167,17 @@ public class UserController {
             System.out.println("No CSRF token found in login request.");
         }
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).body(new MessageResponse("User is not authenticated."));
+        }
+
+        return ResponseEntity.ok(new MessageResponse("User is authenticated."));
     }
 
 }
