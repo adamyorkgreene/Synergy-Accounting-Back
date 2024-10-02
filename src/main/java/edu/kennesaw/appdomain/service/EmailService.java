@@ -1,21 +1,28 @@
 package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.entity.User;
+import edu.kennesaw.appdomain.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+    @Autowired
+    private UserRepository userRepository;
 
     public void sendVerificationEmail(String to, String verifyLink) {
         MimeMessage mm = mailSender.createMimeMessage();
@@ -132,6 +139,39 @@ public class EmailService {
         }
     }
 
+    public void sendPasswordExpirationNotification(User to, Date expirationDate) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            helper.setTo(to.getEmail());
+            helper.setSubject("Your Password is about to Expire!");
+            helper.setText(
+                    "<html>" +
+                            "<head>" +
+                            "<style>" +
+                            "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
+                            "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                            "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                            "div { text-align: center; }" +
+                            "</style>" +
+                            "</head>" +
+                            "<body>" +
+                            "<div>" +
+                            "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
+                            "</div>" +
+                            "<h2><h2/>" +
+                            "<h2>" + "Your password will expire on: " + expirationDate.toString() + "</h2>" +
+                            "<h2><h2/>" +
+                            "<a href=\"https://synergyaccounting.app/login\">Reset your password now!</a>" +
+                            "</body>" +
+                            "</html>",
+                    true);
+            sendFormattedEmail(mm, helper);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+
     private void sendFormattedEmail(MimeMessage mm, MimeMessageHelper helper) throws MessagingException {
         ClassPathResource res = new ClassPathResource("static/images/synergylogo.png");
         helper.setFrom("noreply@synergyaccounting.app");
@@ -145,4 +185,36 @@ public class EmailService {
         mailSender.send(mm);
     }
 
+    @Scheduled(cron = "0 0 8 * * ?")
+    public void sendPasswordExpirationNotifications() {
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+
+        cal.add(Calendar.DAY_OF_YEAR, -90);
+
+        Date before = cal.getTime();
+
+        cal.add(Calendar.DAY_OF_YEAR, 3);
+
+        Date after = cal.getTime();
+
+        List<User> usersWithExpiringPasswords = userRepository.findAllByLastPasswordResetIsBetween(before, after);
+
+        for (int i = 0; i < usersWithExpiringPasswords.size(); i += 1) {
+            int end = Math.min(usersWithExpiringPasswords.size(), i + 1);
+            List<User> batch = usersWithExpiringPasswords.subList(i, end);
+            for (User user : batch) {
+                cal.setTime(user.getLastPasswordReset());
+                cal.add(Calendar.DAY_OF_YEAR, 90);
+                Date expirationDate = cal.getTime();
+                sendPasswordExpirationNotification(user, expirationDate);
+            }
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 }

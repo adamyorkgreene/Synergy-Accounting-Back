@@ -25,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.UUID;
@@ -108,6 +109,17 @@ public class UserService {
 
             System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
 
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(authenticatedUser.getLastPasswordReset());
+            cal.add(Calendar.DAY_OF_YEAR, 90);
+
+            Date d = new Date();
+
+            if (d.after(cal.getTime())) {
+                return ResponseEntity.status(HttpStatus.LOCKED).body(new MessageResponse("Your password has expired!" +
+                        " Please reset it."));
+            }
+
             if (authenticatedUser.getFailedLoginAttempts() >= 3) {
                 return ResponseEntity.status(HttpStatus.LOCKED).body(new MessageResponse("Your account has been locked." +
                         " Please reset your password."));
@@ -144,13 +156,25 @@ public class UserService {
     }
 
     public ResponseEntity<MessageResponse> resetPassword(String token, String newPassword) {
+
         PasswordResetToken resetToken = tokenRepository.findByToken(token);
         if (resetToken == null || resetToken.getExpiryDate().before(new Date())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+
         User user = resetToken.getUser();
+        String newEncodedPassword = passwordEncoder.encode(newPassword);
+
+        if (user.getOldPasswords().contains(newEncodedPassword)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("You must change your password" +
+                    " to one you have not previously used."));
+        }
+
+        user.addOldPassword(user.getPassword());
+        user.setLastPasswordReset(new Date());
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setFailedLoginAttempts(0);
+
         userRepository.save(user);
         tokenRepository.delete(resetToken);
         return ResponseEntity.ok(new MessageResponse("Password reset was successful!"));

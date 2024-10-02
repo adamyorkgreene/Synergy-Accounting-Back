@@ -22,8 +22,8 @@ public class SynergyUserDetailsService implements UserDetailsService {
         }
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword()) // Make sure this is encrypted using BCrypt
-                .roles(user.getUserType().name()) // Use your UserType as the role
+                .password(user.getPassword())
+                .roles(user.getUserType().name())
                 .build();
         }
 }

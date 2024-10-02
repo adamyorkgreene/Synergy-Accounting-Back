@@ -5,7 +5,9 @@ import edu.kennesaw.appdomain.UserType;
 import jakarta.persistence.*;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -38,12 +40,6 @@ public class User {
     @Column(nullable = false)
     private Date birthday;
 
-    /*@Column(nullable = false)
-    private int birthMonth;
-
-    @Column(nullable = false)
-    private int birthYear;*/
-
     @Column(nullable = false)
     private Date joinDate;
 
@@ -68,11 +64,20 @@ public class User {
     @Column
     private Date tempLeaveEnd;
 
+    @Column
+    private Date lastPasswordReset;
+
+    @ElementCollection
+    @CollectionTable(name = "user_old_passwords", joinColumns = @JoinColumn(name = "userid"))
+    @Column(name = "old_passwords")
+    private Set<String> oldPasswords = new HashSet<>();
+
     public User() {
         Random ran = new Random();
         verificationCode = ran.nextInt(999999) + "";
         userType = UserType.DEFAULT;
         setIsVerified(false);
+        lastPasswordReset = new Date();
     }
 
     public void setUserid(Long id) {
@@ -218,5 +223,27 @@ public class User {
         this.isActive = isActive;
     }
 
+    @Column(name = "old_passwords")
+    public Set<String> getOldPasswords() {
+        return oldPasswords;
+    }
+
+    @Column(name = "old_passwords")
+    public void setOldPasswords(Set<String> oldPasswords) {
+        this.oldPasswords = oldPasswords;
+    }
+
+    @Column(name = "old_passwords")
+    public void addOldPassword(String oldPassword) {
+        oldPasswords.add(oldPassword);
+    }
+
+    public Date getLastPasswordReset() {
+        return lastPasswordReset;
+    }
+
+    public void setLastPasswordReset(Date lastPasswordReset) {
+        this.lastPasswordReset = lastPasswordReset;
+    }
 }
 
