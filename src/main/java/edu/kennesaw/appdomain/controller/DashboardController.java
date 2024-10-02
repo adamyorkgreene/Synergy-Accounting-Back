@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,14 +51,19 @@ public class DashboardController {
     }
 
     @GetMapping("/uploads/{filename:.+}")
-    public ResponseEntity<Resource> serveFile(@PathVariable String filename) throws IOException {
-        Path filePath = Paths.get("/home/sweappdomain/demobackend/uploads/").resolve(filename);
-        Resource resource = new FileSystemResource(filePath);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE,
-                        Files.probeContentType(filePath)).body(resource);
+    public ResponseEntity<?> serveFile(@PathVariable String filename) {
+        try {
+            Path filePath = Paths.get("/home/sweappdomain/demobackend/uploads/").resolve(filename);
+            Resource resource = new FileSystemResource(filePath);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE,
+                            Files.probeContentType(filePath)).body(resource);
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
     }
-
 
 }

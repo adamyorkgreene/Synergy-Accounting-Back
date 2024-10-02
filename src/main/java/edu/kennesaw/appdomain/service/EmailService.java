@@ -88,7 +88,7 @@ public class EmailService {
             helper.setText("The following user has registered for SynergyAccounting and must be approved: \n"
                     + "First Name: " + user.getFirstName() + "\n"
                     + "Last Name: " + user.getLastName() + "\n"
-                    + "DOB: " + user.getBirthMonth() + "/" + user.getBirthday() + "/" + user.getBirthYear() + "\n"
+                    + "DOB: " + user.getBirthday().toString() + "\n"
                     + "Email Address: " + user.getEmail() + "\n"
                     + "Home Address: " + user.getAddress() + "\n"
                     + "Please approve verification using this link: " + confirmationLink

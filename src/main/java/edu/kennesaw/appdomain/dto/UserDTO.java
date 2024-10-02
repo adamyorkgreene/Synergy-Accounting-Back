@@ -1,11 +1,15 @@
 package edu.kennesaw.appdomain.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.kennesaw.appdomain.UserType;
 
+import java.util.Date;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
 public class UserDTO {
+
+    private Optional<Integer> userid = Optional.empty();
 
     private Optional<String> username;
 
@@ -15,21 +19,27 @@ public class UserDTO {
 
     private Optional<String> email;
 
-    private Optional<Integer> birthday;
-
-    private Optional<Integer> birthMonth;
-
-    private Optional<Integer> birthYear;
+    private Optional<Date> birthday = Optional.empty();
 
     private Optional<Boolean> isVerified;
 
     private Optional<Boolean> isActive;
 
-    private Optional<UserType> role;
+    private Optional<UserType> userType;
 
     private Optional<String> address;
 
+    private Optional<Date> tempLeaveStart = Optional.empty();
+
+    private Optional<Date> tempLeaveEnd = Optional.empty();
+
+    private Optional<Integer> failedPasswordAttempts = Optional.empty();
+
     private boolean isIncomplete;
+
+    public void setUserid(Optional<Integer> userid) {
+        this.userid = userid;
+    }
 
     public void setUsername(Optional<String> username) {
         this.username = username;
@@ -47,20 +57,21 @@ public class UserDTO {
         this.email = email;
     }
 
-    public void setBirthday(Optional<Integer> birthday) {
+    @JsonProperty("birthday")
+    public void setBirthday(Optional<Date> birthday) {
         this.birthday = birthday;
     }
 
-    public void setBirthMonth(Optional<Integer> birthMonth) {
-        this.birthMonth = birthMonth;
+    public void setTempLeaveStart(Optional<Date> tempLeaveStart) {
+        this.tempLeaveStart = tempLeaveStart;
     }
 
-    public void setBirthYear(Optional<Integer> birthYear) {
-        this.birthYear = birthYear;
+    public void setTempLeaveEnd(Optional<Date> tempLeaveEnd) {
+        this.tempLeaveEnd = tempLeaveEnd;
     }
 
-    public void setRole(Optional<UserType> role) {
-        this.role = role;
+    public void setUserType(Optional<UserType> userType) {
+        this.userType = userType;
     }
 
     public void setIsVerified(Optional<Boolean> isVerified) {
@@ -75,8 +86,16 @@ public class UserDTO {
         this.address = address;
     }
 
+    public void setFailedPasswordAttempts(Optional<Integer> failedPasswordAttempts) {
+        this.failedPasswordAttempts = failedPasswordAttempts;
+    }
+
     public void setIsIncomplete(boolean isIncomplete) {
         this.isIncomplete = isIncomplete;
+    }
+
+    public Optional<Integer> getUserid() {
+        return userid;
     }
 
     public Optional<String> getUsername() {
@@ -95,20 +114,21 @@ public class UserDTO {
         return email;
     }
 
-    public Optional<Integer> getBirthday() {
+    @JsonProperty("birthday")
+    public Optional<Date> getBirthday() {
         return birthday;
     }
 
-    public Optional<Integer> getBirthMonth() {
-        return birthMonth;
+    public Optional<Date> getTempLeaveStart() {
+        return tempLeaveStart;
     }
 
-    public Optional<Integer> getBirthYear() {
-        return birthYear;
+    public Optional<Date> getTempLeaveEnd() {
+        return tempLeaveEnd;
     }
 
-    public Optional<UserType> getRole() {
-        return role;
+    public Optional<UserType> getUserType() {
+        return userType;
     }
 
     public Optional<Boolean> getIsVerified() {
@@ -121,6 +141,10 @@ public class UserDTO {
 
     public Optional<String> getAddress() {
         return address;
+    }
+
+    public Optional<Integer> getFailedPasswordAttempts() {
+        return failedPasswordAttempts;
     }
 
     public boolean getIsIncomplete() {

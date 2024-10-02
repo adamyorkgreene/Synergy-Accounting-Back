@@ -1,5 +1,7 @@
 package edu.kennesaw.appdomain.dto;
 
+import java.util.Date;
+
 public class RegistrationRequest {
 
     private String email;
@@ -7,10 +9,12 @@ public class RegistrationRequest {
     private String confpassword;
     private String firstName;
     private String lastName;
-    private int birthday;
-    private int birthMonth;
-    private int birthYear;
+    private Date birthday;
+    //private int birthMonth;
+    //private int birthYear;
     private String address;
+
+    private final Date joinDate = new Date();
 
     public String getEmail() {
         return email;
@@ -36,15 +40,19 @@ public class RegistrationRequest {
         return lastName;
     }
 
-    public void setBirthday(int birthday) {
+    public void setBirthday(Date birthday) {
         this.birthday = birthday;
     }
 
-    public int getBirthday() {
+    public Date getBirthday() {
         return birthday;
     }
 
-    public void setBirthMonth(int birthMonth) {
+    public Date getJoinDate() {
+        return joinDate;
+    }
+
+    /*public void setBirthMonth(int birthMonth) {
         this.birthMonth = birthMonth;
     }
 
@@ -58,7 +66,7 @@ public class RegistrationRequest {
 
     public int getBirthYear() {
         return birthYear;
-    }
+    }*/
 
     public void setAddress(String address) {
         this.address = address;

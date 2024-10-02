@@ -58,10 +58,9 @@ public class UserService {
         user.setFirstName(registrationRequest.getFirstName());
         user.setLastName(registrationRequest.getLastName());
         user.setBirthday(registrationRequest.getBirthday());
-        user.setBirthMonth(registrationRequest.getBirthMonth());
-        user.setBirthYear(registrationRequest.getBirthYear());
         user.setAddress(registrationRequest.getAddress());
         user.setPassword(registrationRequest.getPassword());
+        user.setJoinDate(registrationRequest.getJoinDate());
         user.setUsername(ServiceUtils.generateUsername(registrationRequest.getFirstName(), registrationRequest.getLastName(), userRepository));
         String email = user.getEmail();
         String password = user.getPassword();
