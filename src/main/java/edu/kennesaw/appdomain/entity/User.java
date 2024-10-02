@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.kennesaw.appdomain.UserType;
 import jakarta.persistence.*;
 
+import java.util.Date;
 import java.util.Random;
 import java.time.LocalDateTime;
 
@@ -36,13 +37,16 @@ public class User {
     private String lastName;
 
     @Column(nullable = false)
-    private int birthday;
+    private Date birthday;
 
-    @Column(nullable = false)
+    /*@Column(nullable = false)
     private int birthMonth;
 
     @Column(nullable = false)
-    private int birthYear;
+    private int birthYear;*/
+
+    @Column(nullable = false)
+    private Date joinDate;
 
     @Column(nullable = false)
     private String address;
@@ -53,17 +57,27 @@ public class User {
     @Column(nullable = false, columnDefinition = "TINYINT(1)")
     private boolean isVerified;
 
+    @Column(nullable = false, columnDefinition = "TINYINT(1)")
+    private boolean isActive;
+
     @Column(nullable = false)
     private int failedLoginAttempts;
+
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PasswordHistory> passwordHistories;
 
-// Password expiration feature
     @Column(nullable = false)
     private LocalDateTime passwordLastUpdated;
 
     private final int PASSWORD_EXPIRY_DAYS = 90;
+
+    @Column
+    private Date tempLeaveStart;
+
+    @Column
+    private Date tempLeaveEnd;
+
 
     public User() {
         Random ran = new Random();
@@ -126,15 +140,39 @@ public class User {
         return lastName;
     }
 
-    public void setBirthday(int birthday) {
+    public void setBirthday(Date birthday) {
         this.birthday = birthday;
     }
 
-    public int getBirthday() {
+    public Date getBirthday() {
         return birthday;
     }
 
-    public void setBirthMonth(int birthMonth) {
+    public void setJoinDate(Date joinDate) {
+        this.joinDate = joinDate;
+    }
+
+    public Date getJoinDate() {
+        return joinDate;
+    }
+
+    public void setTempLeaveStart(Date tempLeaveStart) {
+        this.tempLeaveStart = tempLeaveStart;
+    }
+
+    public Date getTempLeaveStart() {
+        return tempLeaveStart;
+    }
+
+    public void setTempLeaveEnd(Date tempLeaveEnd) {
+        this.tempLeaveEnd = tempLeaveEnd;
+    }
+
+    public Date getTempLeaveEnd() {
+        return tempLeaveEnd;
+    }
+
+    /*public void setBirthMonth(Date birthMonth) {
         this.birthMonth = birthMonth;
     }
 
@@ -142,13 +180,13 @@ public class User {
         return birthMonth;
     }
 
-    public void setBirthYear(int birthYear) {
+    public void setBirthYear(Date birthYear) {
         this.birthYear = birthYear;
     }
 
     public int getBirthYear() {
         return birthYear;
-    }
+    }*/
 
     public void setAddress(String address) {
         this.address = address;
@@ -199,9 +237,19 @@ public class User {
         return failedLoginAttempts;
     }
 
+
     public void setPassword(String password) {
         this.password = password;
         this.passwordLastUpdated = LocalDateTime.now();
+
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+
     }
 
 }

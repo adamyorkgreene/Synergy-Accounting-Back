@@ -18,19 +18,16 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.text.SimpleDateFormat;
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -52,85 +49,30 @@ public class UserController {
     private ConfirmationRepository confirmationRepository;
     @Autowired
     private VerificationRepository verificationRepository;
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest, HttpServletRequest request) {
-        User user = new User();
-        user.setEmail(registrationRequest.getEmail());
-        user.setFirstName(registrationRequest.getFirstName());
-        user.setLastName(registrationRequest.getLastName());
-        user.setBirthday(registrationRequest.getBirthday());
-        user.setBirthMonth(registrationRequest.getBirthMonth());
-        user.setBirthYear(registrationRequest.getBirthYear());
-        user.setAddress(registrationRequest.getAddress());
-        user.setPassword(registrationRequest.getPassword());
-        GregorianCalendar gc = new GregorianCalendar();
-        SimpleDateFormat year = new SimpleDateFormat("yy");
-        SimpleDateFormat month = new SimpleDateFormat("MM");
-        String username = registrationRequest.getFirstName().charAt(0) + registrationRequest.getLastName() + month.format(gc.getTime()) + year.format(gc.getTime());
-        if (userRepository.findByUsername(username) != null) {
-            int increment = 1;
-            while (userRepository.findByUsername(username) != null) {
-                username += "-" + increment;
-                increment++;
-            }
-        }
-        user.setUsername(username);
-        return userService.registerUser(user, registrationRequest.getConfpassword());
+    public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest) {
+        return userService.registerUser(registrationRequest);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest user, HttpServletRequest request) {
-        try {
+        HttpSession session = request.getSession(true);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
-            );
+        System.out.println("Session ID: " + session.getId());
+        System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            HttpSession session = request.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
-
-            System.out.println("Session ID: " + session.getId());
-            System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
-
-            return userService.loginUser(user.getEmail(), user.getPassword());
-
-        } catch (BadCredentialsException e) {
-            User invalidUser = userRepository.findByEmail(user.getEmail());
-            if (invalidUser != null) {
-                invalidUser.setFailedLoginAttempts(invalidUser.getFailedLoginAttempts() + 1);
-                userRepository.save(invalidUser);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new MessageResponse("Invalid username or password!"));
-            }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageResponse("This email does not exist in our database!"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("An error occurred during login"));
-        }
+        return userService.loginUser(user);
     }
 
     @PostMapping("/request-password-reset")
-    public ResponseEntity<MessageResponse> requestResetPassword(@RequestBody EmailObject email, HttpServletRequest request) {
-        User user = userService.getUserFromEmail(email.getEmail());
-        if (user != null) {
-            String token = UUID.randomUUID().toString();
-            userService.savePasswordResetToken(user, token);
-            String resetLink = "https://synergyaccounting.app/password-reset?token=" + token;
-            emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
-            return ResponseEntity.ok(new MessageResponse("A link to reset your password has been sent" +
-                    " to your email."));
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Invalid email address."));
+    public ResponseEntity<MessageResponse> requestResetPassword(@RequestBody EmailObject email) {
+        return userService.sendResetPasswordEmail(email.getEmail());
     }
 
     @GetMapping("/password-reset")
-    public ResponseEntity<MessageResponse> showPasswordResetForm(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> showPasswordResetForm(@RequestParam("token") String token) {
         PasswordResetToken resetToken = tokenRepository.findByToken(token);
         if (resetToken == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Password " +
@@ -144,24 +86,21 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/password-reset")
-    public ResponseEntity<MessageResponse> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password, HttpServletRequest request) {
-// Check password history before resetting
-        User user = userService.getUserFromEmail();
-        List<String> previousPasswords = userRepository.findAllPasswordsByUserId(user.getUserid());
+    public ResponseEntity<MessageResponse> resetPassword(@RequestParam("token") String token, @RequestBody NewPasswordRequest password) {
+  
+       User user = userService.getUserFromEmail();
+       List<String> previousPasswords = userRepository.findAllPasswordsByUserId(user.getUserid());
 
 // Check if new password is in history
         if (previousPasswords.contains(password.getPassword())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("New password cannot be the same as any of the last paswords."));
         }
-// Save new password to history
-        userRepository.saveNewPassword(user, password.getPassword());
 
         return userService.resetPassword(token, password.getPassword());
     }
 
     @GetMapping("/confirm-user")
-    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token) {
         ConfirmationToken confToken = confirmationRepository.findByToken(token);
         if (confToken == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Confirmation" +
@@ -171,11 +110,12 @@ public class UserController {
         user.setUserType(UserType.USER);
         userRepository.save(user);
         confirmationRepository.delete(confToken);
+        emailService.sendApprovalEmail(user.getEmail());
         return ResponseEntity.ok(new MessageResponse("User has been confirmed!"));
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<MessageResponse> verifyUser(@RequestParam("token") String token, HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> verifyUser(@RequestParam("token") String token) {
 
         // Handle Verification Request
 
@@ -236,6 +176,17 @@ public class UserController {
             System.out.println("No CSRF token found in login request.");
         }
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).body(new MessageResponse("User is not authenticated."));
+        }
+
+        return ResponseEntity.ok(new MessageResponse("User is authenticated."));
     }
 
 }

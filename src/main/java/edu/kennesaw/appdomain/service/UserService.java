@@ -1,6 +1,9 @@
 package edu.kennesaw.appdomain.service;
 
+import edu.kennesaw.appdomain.UserType;
+import edu.kennesaw.appdomain.dto.LoginRequest;
 import edu.kennesaw.appdomain.dto.MessageResponse;
+import edu.kennesaw.appdomain.dto.RegistrationRequest;
 import edu.kennesaw.appdomain.entity.ConfirmationToken;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
 import edu.kennesaw.appdomain.entity.User;
@@ -9,20 +12,28 @@ import edu.kennesaw.appdomain.repository.ConfirmationRepository;
 import edu.kennesaw.appdomain.repository.TokenRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.repository.VerificationRepository;
+import edu.kennesaw.appdomain.service.utils.ServiceUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
 import java.util.UUID;
 
 @Service
@@ -48,11 +59,20 @@ public class UserService {
 
     @Autowired EmailService emailService;
 
-    public ResponseEntity<?> registerUser(User user, String confpassword) {
+    public ResponseEntity<?> registerUser(RegistrationRequest registrationRequest) {
+        User user = new User();
+        user.setEmail(registrationRequest.getEmail());
+        user.setFirstName(registrationRequest.getFirstName());
+        user.setLastName(registrationRequest.getLastName());
+        user.setBirthday(registrationRequest.getBirthday());
+        user.setAddress(registrationRequest.getAddress());
+        user.setPassword(registrationRequest.getPassword());
+        user.setJoinDate(registrationRequest.getJoinDate());
+        user.setUsername(ServiceUtils.generateUsername(registrationRequest.getFirstName(), registrationRequest.getLastName(), userRepository));
         String email = user.getEmail();
         String password = user.getPassword();
         if (userRepository.findByEmail(email) == null) {
-            if (password.equals(confpassword)) {
+            if (password.equals(registrationRequest.getConfpassword())) {
                 if (email.contains("@") && email.contains(".") && !email.contains(" ") && email.length() > 6) {
                     if (password.length() >= 8 && !password.contains(" ")) {
                         user.setPassword(passwordEncoder.encode(password));
@@ -62,45 +82,72 @@ public class UserService {
                         saveVerificationToken(user, token);
                         String confirmLink = "https://synergyaccounting.app/verify?token=" + token;
                         emailService.sendVerificationEmail(user.getEmail(), confirmLink);
-                        return ResponseEntity.ok(new MessageResponse("A verification link has been sent to your email."));
+                        return ResponseEntity.ok(
+                                new MessageResponse("A verification link has been sent to your email.")
+                        );
                     }
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                            new MessageResponse("Password must be at least 8 characters and not contain spaces."));
+                            new MessageResponse("Password must be at least 8 characters and not contain spaces.")
+                    );
                 }
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        new MessageResponse("Email address is invalid."));
+                        new MessageResponse("Email address is invalid.")
+                );
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new MessageResponse("Passwords do not match."));
+                    new MessageResponse("Passwords do not match.")
+            );
         }
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                new MessageResponse("An account already exists using this email."));
+                new MessageResponse("An account already exists using this email.")
+        );
     }
 
-    public ResponseEntity<?> loginUser(String email, String password) {
+    public ResponseEntity<?> loginUser(LoginRequest lr) {
         try {
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(lr.getEmail(), lr.getPassword())
+            );
+
+            User authenticatedUser = userRepository.findByEmail(lr.getEmail());
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            User authenticatedUser = userRepository.findByEmail(email);
+            System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
 
-            if (authenticatedUser == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("User does not exist!"));
-            }
-            /*if (!authenticatedUser.getPassword().equals(passwordEncoder.encode(password))) {
-                authenticatedUser.setFailedLoginAttempts(authenticatedUser.getFailedLoginAttempts() + 1);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("Incorrect Password!"));
-            }*/
             if (authenticatedUser.getFailedLoginAttempts() >= 3) {
                 return ResponseEntity.status(HttpStatus.LOCKED).body(new MessageResponse("Your account has been locked." +
                         " Please reset your password."));
             }
+
             authenticatedUser.setFailedLoginAttempts(0);
             userRepository.save(authenticatedUser);
             return ResponseEntity.ok(authenticatedUser);
 
+        } catch (BadCredentialsException e) {
+
+            User invalidUser = userRepository.findByEmail(lr.getEmail());
+
+            if (invalidUser != null) {
+                invalidUser.setFailedLoginAttempts(invalidUser.getFailedLoginAttempts() + 1);
+                userRepository.save(invalidUser);
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new MessageResponse("Invalid username or password!")
+                );
+
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("This email does not exist in our database!")
+            );
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("Invalid Credentials."));
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("An error occurred during login")
+            );
+
         }
     }
 
@@ -174,6 +221,7 @@ public class UserService {
         confirmationRepository.save(confToken);
     }
 
+
     // Method to notify user about upcoming password expiration
     public void notifyUsersAboutPasswordExpiration() {
         List<User> users = userRepository.findAll(); 
@@ -191,6 +239,20 @@ public class UserService {
                 }
             }
         }
+
+    public ResponseEntity<MessageResponse> sendResetPasswordEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            String token = UUID.randomUUID().toString();
+            savePasswordResetToken(user, token);
+            String resetLink = "https://synergyaccounting.app/password-reset?token=" + token;
+            emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+            return ResponseEntity.ok(new MessageResponse("A link to reset your password has been sent" +
+                    " to your email.")
+            );
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Invalid email address."));
+
     }
 
 }

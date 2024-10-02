@@ -29,6 +29,7 @@ public class EmailService {
                                 "<style>" +
                                     "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
                                     "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
                                     "div { text-align: center; }" +
                                 "</style>" +
                             "</head>" +
@@ -36,8 +37,8 @@ public class EmailService {
                                 "<div>" +
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
-                                "<h2>" + "Open this link to verify your account:" + "</h2>" +
-                                "<h2>" + verifyLink + "</h2>" +
+                                "<h2>" + "Click here to verify your account:" + "</h2>" +
+                                "<a href=\"" + verifyLink + "\">Verify my Account</a>" +
                             "</body>" +
                         "</html>",
                     true);
@@ -59,6 +60,7 @@ public class EmailService {
                                 "<style>" +
                                     "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
                                     "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
                                     "div { text-align: center; }" +
                                 "</style>" +
                             "</head>" +
@@ -67,7 +69,7 @@ public class EmailService {
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
                                 "<h2>" + "Open this link to reset your password:" + "</h2>" +
-                                "<h2>" + resetLink + "</h2>" +
+                            "<a href=\"" + resetLink + "\">Reset my Password</a>" +
                             "</body>" +
                         "</html>",
                     true);
@@ -86,7 +88,7 @@ public class EmailService {
             helper.setText("The following user has registered for SynergyAccounting and must be approved: \n"
                     + "First Name: " + user.getFirstName() + "\n"
                     + "Last Name: " + user.getLastName() + "\n"
-                    + "DOB: " + user.getBirthMonth() + "/" + user.getBirthday() + "/" + user.getBirthYear() + "\n"
+                    + "DOB: " + user.getBirthday().toString() + "\n"
                     + "Email Address: " + user.getEmail() + "\n"
                     + "Home Address: " + user.getAddress() + "\n"
                     + "Please approve verification using this link: " + confirmationLink
@@ -97,19 +99,19 @@ public class EmailService {
         }
     }
 
-     // Send a notification email to the user about password expiration.
-    public void sendPasswordExpirationNotification(String to, String username) {
+    public void sendApprovalEmail(String to) {
         MimeMessage mm = mailSender.createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
             helper.setTo(to);
-            helper.setSubject("Password Expiration Warning");
+            helper.setSubject("Your Account has been Approved");
             helper.setText(
                     "<html>" +
                             "<head>" +
                                 "<style>" +
                                     "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
                                     "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
                                     "div { text-align: center; }" +
                                 "</style>" +
                             "</head>" +
@@ -117,10 +119,45 @@ public class EmailService {
                                 "<div>" +
                                     "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
                                 "</div>" +
-                                "<h2>Dear " + username + ",</h2>" +
-                                "<h2>Your password will expire in 3 days. Please update it to maintain access.</h2>" +
+                                "<h2><h2/>" +
+                                "<h2>" + "Your account is ready to be used!" + "</h2>" +
+                                "<h2><h2/>" +
+                                "<a href=\"https://synergyaccounting.app/login\">Click here to Login</a>" +
                             "</body>" +
-                        "</html>",
+                         "</html>",
+                    true);
+            sendFormattedEmail(mm, helper);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+  
+      public void sendPasswordResetNotification(String to) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Your Password is Expiring!");
+            helper.setText(
+                    "<html>" +
+                            "<head>" +
+                                "<style>" +
+                                    "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
+                                    "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "div { text-align: center; }" +
+                                "</style>" +
+                            "</head>" +
+                            "<body>" +
+                                "<div>" +
+                                    "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
+                                "</div>" +
+                                "<h2><h2/>" +
+                                "<h2>" + "Please login and update your password!!" + "</h2>" +
+                                "<h2><h2/>" +
+                                "<a href=\"https://synergyaccounting.app/login\">Click here to Login</a>" +
+                            "</body>" +
+                         "</html>",
                     true);
             sendFormattedEmail(mm, helper);
         } catch (MessagingException e) {

@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -16,10 +17,9 @@ import java.io.IOException;
 public class SessionDebugFilter extends OncePerRequestFilter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Log session details
         HttpSession session = request.getSession(false);
         if (session != null) {
             System.out.println("Session ID: " + session.getId());
@@ -27,7 +27,6 @@ public class SessionDebugFilter extends OncePerRequestFilter {
             System.out.println("No session found.");
         }
 
-        // Log authentication details
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
             System.out.println("User is authenticated: " + auth.getName());
@@ -35,7 +34,6 @@ public class SessionDebugFilter extends OncePerRequestFilter {
             System.out.println("User is not authenticated.");
         }
 
-        // Continue with the filter chain
         filterChain.doFilter(request, response);
     }
 }

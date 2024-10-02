@@ -34,7 +34,10 @@ public class SecurityConfig {
                         auth.requestMatchers("/api/users/login", "/api/users/register",
                                         "/api/users/verify", "/api/users/verify-request", "/api/users/password-reset", "/api/users/request-password-reset",
                                         "/api/users/request-confirm-user", "/api/users/confirm-user", "/api/csrf").permitAll()
-                        .requestMatchers("/dashboard").authenticated()
+                        .requestMatchers("/dashboard", "/api/users/validate").authenticated()
+                                .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/api/manager/**").hasAnyRole("ADMINISTRATOR", "MANAGER")
+                                .requestMatchers("/api/dashboard/**").hasAnyRole("USER", "ADMINISTRATOR", "MANAGER")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .logout(logout -> logout.logoutUrl("/api/users/logout").logoutSuccessUrl("/api/users/login").permitAll());
