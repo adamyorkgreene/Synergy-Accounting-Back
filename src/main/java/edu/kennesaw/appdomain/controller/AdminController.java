@@ -1,6 +1,7 @@
 package edu.kennesaw.appdomain.controller;
 
 
+import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.UserDTO;
 import edu.kennesaw.appdomain.dto.UserUpdate;
@@ -8,6 +9,9 @@ import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.AdminService;
+import edu.kennesaw.appdomain.service.EmailService;
+import edu.kennesaw.appdomain.service.UserService;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -24,6 +28,9 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     UserRepository userRepository;
@@ -66,6 +73,13 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("That user does not exist."));
         }
         return ResponseEntity.ok(foundUser.get());
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PostMapping("/send-email")
+    public ResponseEntity<?> sendAdminEmail(@RequestBody AdminEmailObject aem) throws MessagingException {
+        emailService.sendAdminEmail(aem.getTo(), aem.getSubject(), aem.getBody());
+        return ResponseEntity.ok().body(new MessageResponse("Email sent.")) ;
     }
 
 }

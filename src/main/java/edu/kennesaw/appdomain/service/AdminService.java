@@ -6,6 +6,7 @@ import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.utils.ServiceUtils;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,9 @@ public class AdminService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private EmailService emailService;
 
     public ResponseEntity<?> createUserWithRole(UserDTO userDTO) throws UserAttributeMissingException {
 

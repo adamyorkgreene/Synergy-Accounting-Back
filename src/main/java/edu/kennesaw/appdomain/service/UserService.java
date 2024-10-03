@@ -189,11 +189,14 @@ public class UserService {
     }
 
     public void savePasswordResetToken(User user, String token) {
-        PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.setUser(user);
-        resetToken.setToken(token);
-        resetToken.setExpiryDate(30);
-        tokenRepository.save(resetToken);
+        PasswordResetToken prt = tokenRepository.findByUser(user);
+        if (prt == null) {
+            prt = new PasswordResetToken();
+            prt.setUser(user);
+        }
+        prt.setToken(token);
+        prt.setExpiryDate(30);
+        tokenRepository.save(prt);
     }
 
     public void saveConfirmationToken(User user, String token) {
@@ -208,6 +211,7 @@ public class UserService {
         User user = userRepository.findByEmail(email);
         if (user != null) {
             String token = UUID.randomUUID().toString();
+
             savePasswordResetToken(user, token);
             String resetLink = "https://synergyaccounting.app/password-reset?token=" + token;
             emailService.sendPasswordResetEmail(user.getEmail(), resetLink);

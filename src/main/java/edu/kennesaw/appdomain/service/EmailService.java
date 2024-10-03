@@ -4,6 +4,8 @@ import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.List;
 @Service
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     @Autowired
     private JavaMailSender mailSender;
     @Autowired
@@ -183,6 +187,20 @@ public class EmailService {
         mm.setHeader("List-Unsubscribe", "<mailto:unsubscribe@synergyaccounting.app>");
         mm.setSentDate(new Date());
         mailSender.send(mm);
+    }
+
+    public void sendAdminEmail(String to, String subject, String body) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, false);
+            sendFormattedEmail(mm, helper);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+            log.error("e: ", e);
+        }
     }
 
     @Scheduled(cron = "0 0 8 * * ?")
