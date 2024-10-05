@@ -1,18 +1,19 @@
 package edu.kennesaw.appdomain.service;
 
+import edu.kennesaw.appdomain.UserType;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.UserDTO;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.utils.ServiceUtils;
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
 
@@ -29,9 +30,12 @@ public class AdminService {
     private UserService userService;
 
     @Autowired
+    private ScriptService scriptService;
+
+    @Autowired
     private EmailService emailService;
 
-    public ResponseEntity<?> createUserWithRole(UserDTO userDTO) throws UserAttributeMissingException {
+    public ResponseEntity<?> createUserWithRole(UserDTO userDTO) throws UserAttributeMissingException, IOException, InterruptedException {
 
         userDTO.setIsIncomplete(false);
 
@@ -45,8 +49,6 @@ public class AdminService {
         if (userDTO.getIsIncomplete()) throw new UserAttributeMissingException("Missing essential user data attributes.");
 
         user.setBirthday(userDTO.getBirthday().isPresent() ? userDTO.getBirthday().get(): null);
-        //user.setBirthMonth(userDTO.getBirthMonth().isPresent() ? userDTO.getBirthMonth().get(): 0);
-        //user.setBirthYear(userDTO.getBirthYear().isPresent() ? userDTO.getBirthYear().get(): 0);
         user.setAddress(userDTO.getAddress().isPresent() ? userDTO.getAddress().get() : null);
 
         String uuid = UUID.randomUUID().toString();
@@ -68,17 +70,37 @@ public class AdminService {
 
         userService.sendResetPasswordEmail(user.getEmail());
 
+        if (createdUser.getUserType().equals(UserType.ADMINISTRATOR)) {
+            scriptService.createMailbox(createdUser);
+        }
+
         return ResponseEntity.ok(createdUser);
     }
 
-    public ResponseEntity<?> updateUser(UserDTO userDetails) {
+    public ResponseEntity<?> updateUser(UserDTO userDetails) throws IOException, InterruptedException {
 
-        assert (userDetails.getUserid().isPresent());
+        if (userDetails.getUserid().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error passing userid."));
+        }
 
         User existingUser = userRepository.findByUserid(userDetails.getUserid().get());
 
         if (existingUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("User not found."));
+        }
+
+        String oldUsername = existingUser.getUsername();
+
+        if (userDetails.getUserType().isPresent()) {
+            if (!existingUser.getUserType().equals(UserType.ADMINISTRATOR)) {
+                if (userDetails.getUserType().get().equals(UserType.ADMINISTRATOR)) {
+                    scriptService.createMailbox(existingUser);
+                }
+            } else {
+                if (!userDetails.getUserType().get().equals(UserType.ADMINISTRATOR)) {
+                    scriptService.deleteMailbox(existingUser);
+                }
+            }
         }
 
         existingUser.setEmail(userDetails.getEmail().isEmpty() ? existingUser.getEmail() : userDetails.getEmail().get());
@@ -92,8 +114,13 @@ public class AdminService {
         existingUser.setFailedLoginAttempts(userDetails.getFailedPasswordAttempts().isEmpty() ? existingUser.getFailedLoginAttempts() : userDetails.getFailedPasswordAttempts().get());
         existingUser.setTempLeaveStart(userDetails.getTempLeaveStart().isEmpty() ? existingUser.getTempLeaveStart() : userDetails.getTempLeaveStart().get());
         existingUser.setTempLeaveEnd(userDetails.getTempLeaveEnd().isEmpty() ? existingUser.getTempLeaveEnd() : userDetails.getTempLeaveEnd().get());
+        existingUser.setEmailPassword(userDetails.getEmailPassword().isEmpty() ? existingUser.getEmailPassword() : userDetails.getEmailPassword().get());
 
         userRepository.save(existingUser);
+
+        if (!oldUsername.equals(existingUser.getUsername())) {
+            scriptService.updateUsername(oldUsername.toLowerCase(), existingUser.getUsername().toLowerCase());
+        }
 
         return ResponseEntity.ok(existingUser);
 

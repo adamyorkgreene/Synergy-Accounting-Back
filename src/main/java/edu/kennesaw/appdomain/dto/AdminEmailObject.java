@@ -1,8 +1,12 @@
 package edu.kennesaw.appdomain.dto;
 
+import edu.kennesaw.appdomain.entity.User;
+
 public class AdminEmailObject {
 
     private String to;
+
+    private User from;
 
     private String subject;
 
@@ -10,6 +14,10 @@ public class AdminEmailObject {
 
     public void setTo(String to) {
         this.to = to;
+    }
+
+    public void setFrom(User from) {
+        this.from = from;
     }
 
     public void setSubject(String subject) {
@@ -22,6 +30,10 @@ public class AdminEmailObject {
 
     public String getTo() {
         return to;
+    }
+
+    public User getFrom() {
+        return from;
     }
 
     public String getSubject() {

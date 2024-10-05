@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.service;
 
+import edu.kennesaw.appdomain.config.MailConfig;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import jakarta.mail.MessagingException;
@@ -23,10 +24,15 @@ import java.util.List;
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
     @Autowired
     private JavaMailSender mailSender;
+
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private MailConfig mailConfig;
 
     public void sendVerificationEmail(String to, String verifyLink) {
         MimeMessage mm = mailSender.createMimeMessage();
@@ -189,14 +195,21 @@ public class EmailService {
         mailSender.send(mm);
     }
 
-    public void sendAdminEmail(String to, String subject, String body) {
-        MimeMessage mm = mailSender.createMimeMessage();
+    public void sendAdminEmail(String to, User from, String subject, String body) {
+        JavaMailSender adminMailSender = mailConfig.getAdminMailSender(from.getUsername().toLowerCase(), from.getEmailPassword());
+        MimeMessage mm = adminMailSender.createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(body, false);
-            sendFormattedEmail(mm, helper);
+            helper.setFrom(from.getUsername().toLowerCase() + "@synergyaccounting.app");
+            mm.setHeader("Message-ID", "<" + System.currentTimeMillis() + "@synergyaccounting.app>");
+            mm.setHeader("X-Mailer", "JavaMailer");
+            mm.setHeader("Return-Path", from.getUsername().toLowerCase() + "@synergyaccounting.app");
+            mm.setHeader("Reply-To", from.getUsername().toLowerCase() + "@synergyaccounting.app");
+            mm.setSentDate(new Date());
+            adminMailSender.send(mm);
         } catch (MessagingException e) {
             System.err.println("Error sending email: " + e.getMessage());
             log.error("e: ", e);

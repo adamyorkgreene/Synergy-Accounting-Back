@@ -35,6 +35,8 @@ public class UserDTO {
 
     private Optional<Integer> failedPasswordAttempts = Optional.empty();
 
+    private Optional<String> emailPassword;
+
     private boolean isIncomplete;
 
     public void setUserid(Optional<Integer> userid) {
@@ -94,6 +96,10 @@ public class UserDTO {
         this.isIncomplete = isIncomplete;
     }
 
+    public void setEmailPassword(Optional<String> emailPassword) {
+        this.emailPassword = emailPassword;
+    }
+
     public Optional<Integer> getUserid() {
         return userid;
     }
@@ -145,6 +151,10 @@ public class UserDTO {
 
     public Optional<Integer> getFailedPasswordAttempts() {
         return failedPasswordAttempts;
+    }
+
+    public Optional<String> getEmailPassword() {
+        return emailPassword;
     }
 
     public boolean getIsIncomplete() {

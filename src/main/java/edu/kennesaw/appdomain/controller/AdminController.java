@@ -4,21 +4,19 @@ package edu.kennesaw.appdomain.controller;
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.UserDTO;
-import edu.kennesaw.appdomain.dto.UserUpdate;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.AdminService;
 import edu.kennesaw.appdomain.service.EmailService;
-import edu.kennesaw.appdomain.service.UserService;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Optional;
 
 @CrossOrigin(origins = "https://synergyaccounting.app", allowCredentials = "true")
@@ -37,13 +35,13 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/create")
-    public ResponseEntity<?> createUser(@RequestBody UserDTO user) throws UserAttributeMissingException {
+    public ResponseEntity<?> createUser(@RequestBody UserDTO user) throws UserAttributeMissingException, IOException, InterruptedException {
         return adminService.createUserWithRole(user);
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/updateuser")
-    public ResponseEntity<?> updateuser(@RequestBody UserDTO user){
+    public ResponseEntity<?> updateuser(@RequestBody UserDTO user) throws IOException, InterruptedException {
         if (user.getUserid().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("UserID must be valid.");
         }
@@ -78,7 +76,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/send-email")
     public ResponseEntity<?> sendAdminEmail(@RequestBody AdminEmailObject aem) throws MessagingException {
-        emailService.sendAdminEmail(aem.getTo(), aem.getSubject(), aem.getBody());
+        emailService.sendAdminEmail(aem.getTo(), aem.getFrom(), aem.getSubject(), aem.getBody());
         return ResponseEntity.ok().body(new MessageResponse("Email sent.")) ;
     }
 

@@ -67,6 +67,9 @@ public class User {
     @Column
     private Date lastPasswordReset;
 
+    @Column(nullable = false)
+    private String emailPassword;
+
     @ElementCollection
     @CollectionTable(name = "user_old_passwords", joinColumns = @JoinColumn(name = "userid"))
     @Column(name = "old_passwords")
@@ -78,6 +81,7 @@ public class User {
         userType = UserType.DEFAULT;
         setIsVerified(false);
         lastPasswordReset = new Date();
+        emailPassword = generateRandomPassword();  // Generate email password on user creation
     }
 
     public void setUserid(Long id) {
@@ -245,5 +249,27 @@ public class User {
     public void setLastPasswordReset(Date lastPasswordReset) {
         this.lastPasswordReset = lastPasswordReset;
     }
+
+    public String getEmailPassword() {
+        return emailPassword;
+    }
+
+    public void setEmailPassword(String emailPassword) {
+        this.emailPassword = emailPassword;
+    }
+
+    private String generateRandomPassword() {
+        // Generate a random 12-character password
+        int length = 12;
+        String charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_+=<>?";
+        Random random = new Random();
+        StringBuilder password = new StringBuilder();
+
+        for (int i = 0; i < length; i++) {
+            password.append(charSet.charAt(random.nextInt(charSet.length())));
+        }
+        return password.toString();
+    }
+
 }
 
