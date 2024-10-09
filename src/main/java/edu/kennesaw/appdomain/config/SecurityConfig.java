@@ -28,19 +28,35 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository()))
+        http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository())
+                        .ignoringRequestMatchers("/", "/login", "/register", "/forgot-password", "/api/csrf",
+                        "/api/users/login", "/api/users/request-password-reset", "/api/users/register"))
                 .addFilterAfter(new SessionDebugFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/users/login", "/api/users/register",
+                        auth.requestMatchers("/api/users/login", "/", "/login", "/register", "/api/users/register", "/verify", "/password-reset", "/confirm-user",
                                         "/api/users/verify", "/api/users/verify-request", "/api/users/password-reset", "/api/users/request-password-reset",
                                         "/api/users/request-confirm-user", "/api/users/confirm-user", "/api/csrf").permitAll()
-                        .requestMatchers("/dashboard", "/api/users/validate").authenticated()
+                        .requestMatchers("/dashboard", "/api/users/dashboard","/api/users/validate").authenticated()
                                 .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
                                 .requestMatchers("/api/manager/**").hasAnyRole("ADMINISTRATOR", "MANAGER")
                                 .requestMatchers("/api/dashboard/**").hasAnyRole("USER", "ADMINISTRATOR", "MANAGER")
                         .anyRequest().authenticated())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .logout(logout -> logout.logoutUrl("/api/users/logout").logoutSuccessUrl("/api/users/login").permitAll());
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .sessionFixation().migrateSession())
+                .logout(logout -> logout
+                        .logoutUrl("/api/users/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            if (request.getSession(false) != null) {
+                                request.getSession().invalidate();
+                            }
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Logged out successfully\"}");
+                            response.getWriter().flush();
+                            response.getWriter().close();
+                        })
+                        .deleteCookies("JSESSIONID")
+                        .permitAll());
         return http.build();
     }
 
@@ -80,24 +96,23 @@ public class SecurityConfig {
     @Bean
     public CookieCsrfTokenRepository csrfCookieTokenRepository() {
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrfTokenRepository.setCookiePath("/");  // Set the cookie path
+        csrfTokenRepository.setCookiePath("/");
         return csrfTokenRepository;
     }
 
     @Bean
     public CsrfTokenRepository csrfTokenRepository() {
-        return new HttpSessionCsrfTokenRepository();  // Store CSRF token in session, not in cookies
+        return new HttpSessionCsrfTokenRepository();
     }
 
     @Bean
     public CookieSerializer cookieSerializer() {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
-        serializer.setSameSite("None");  // Allow cross-origin requests
-        serializer.setUseSecureCookie(true);  // Ensure cookies are sent only over HTTPS
-        serializer.setCookiePath("/");  // Ensure cookie path is root
+        serializer.setSameSite("None");
+        serializer.setUseSecureCookie(true);
+        serializer.setCookiePath("/");
         serializer.setDomainName("synergyaccounting.app");
         return serializer;
     }
-
 
 }

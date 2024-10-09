@@ -12,7 +12,9 @@ import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.repository.VerificationRepository;
 import edu.kennesaw.appdomain.service.EmailService;
 import edu.kennesaw.appdomain.service.UserService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -58,10 +60,8 @@ public class UserController {
 
         System.out.println("Session ID: " + session.getId());
         System.out.println("Authenticated User: " + SecurityContextHolder.getContext().getAuthentication().getName());
-
         return userService.loginUser(user);
     }
-
     @PostMapping("/request-password-reset")
     public ResponseEntity<MessageResponse> requestResetPassword(@RequestBody EmailObject email) {
         return userService.sendResetPasswordEmail(email.getEmail());
@@ -169,12 +169,21 @@ public class UserController {
     @GetMapping("/validate")
     public ResponseEntity<?> validateUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             return ResponseEntity.status(401).body(new MessageResponse("User is not authenticated."));
         }
+        return ResponseEntity.ok(userRepository.findByEmail(authentication.getName()));
+    }
 
-        return ResponseEntity.ok(new MessageResponse("User is authenticated."));
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        request.getSession().invalidate();
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return ResponseEntity.ok(new MessageResponse("Successfully logged out"));
     }
 
 }

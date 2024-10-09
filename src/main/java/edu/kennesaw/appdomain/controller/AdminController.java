@@ -57,21 +57,34 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/usersearch")
     public ResponseEntity<?> findUser(@RequestBody UserDTO user) {
-        Optional<User> foundUser = Optional.empty();
+        User foundById = null;
+        User foundByEmail = null;
+        User foundByUsername = null;
         if (user.getUserid().isPresent()) {
-            foundUser = Optional.ofNullable(userRepository.findByUserid(user.getUserid().get()));
+            foundById = userRepository.findByUserid(user.getUserid().get());
         }
-        if (foundUser.isEmpty() && user.getEmail().isPresent()) {
-            foundUser = Optional.ofNullable(userRepository.findByEmail(user.getEmail().get()));
+        if (user.getEmail().isPresent()) {
+            foundByEmail = userRepository.findByEmail(user.getEmail().get());
         }
-        if (foundUser.isEmpty() && user.getUsername().isPresent()) {
-            foundUser = Optional.ofNullable(userRepository.findByUsername(user.getUsername().get()));
+        if (user.getUsername().isPresent()) {
+            foundByUsername = userRepository.findByUsername(user.getUsername().get());
         }
-        if (foundUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("That user does not exist."));
+        if (foundById == null && foundByEmail == null && foundByUsername == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponse("That user does not exist."));
         }
-        return ResponseEntity.ok(foundUser.get());
+        if ((foundById != null && foundByEmail != null && !foundById.equals(foundByEmail)) ||
+                (foundById != null && foundByUsername != null && !foundById.equals(foundByUsername)) ||
+                (foundByEmail != null && foundByUsername != null && !foundByEmail.equals(foundByUsername))) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new MessageResponse("Multiple fields correspond to different users."));
+        }
+        User foundUser = foundById != null ? foundById :
+                foundByEmail != null ? foundByEmail :
+                        foundByUsername;
+        return ResponseEntity.ok(foundUser);
     }
+
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/send-email")
