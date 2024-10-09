@@ -1,7 +1,7 @@
 package edu.kennesaw.appdomain.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import edu.kennesaw.appdomain.UserType;
+import edu.kennesaw.appdomain.types.UserType;
 
 import java.util.Date;
 import java.util.Optional;
@@ -11,23 +11,23 @@ public class UserDTO {
 
     private Optional<Integer> userid = Optional.empty();
 
-    private Optional<String> username;
+    private Optional<String> username = Optional.empty();
 
-    private Optional<String> firstName;
+    private Optional<String> firstName = Optional.empty();
 
-    private Optional<String> lastName;
+    private Optional<String> lastName = Optional.empty();
 
-    private Optional<String> email;
+    private Optional<String> email = Optional.empty();
 
     private Optional<Date> birthday = Optional.empty();
 
-    private Optional<Boolean> isVerified;
+    private Optional<Boolean> isVerified = Optional.empty();
 
-    private Optional<Boolean> isActive;
+    private Optional<Boolean> isActive = Optional.empty();
 
-    private Optional<UserType> userType;
+    private Optional<UserType> userType = Optional.empty();
 
-    private Optional<String> address;
+    private Optional<String> address = Optional.empty();
 
     private Optional<Date> tempLeaveStart = Optional.empty();
 
@@ -35,7 +35,7 @@ public class UserDTO {
 
     private Optional<Integer> failedPasswordAttempts = Optional.empty();
 
-    private Optional<String> emailPassword;
+    private Optional<String> emailPassword = Optional.empty();
 
     private boolean isIncomplete;
 

@@ -1,6 +1,8 @@
 package edu.kennesaw.appdomain.controller;
 
+import edu.kennesaw.appdomain.dto.MessageResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -50,19 +52,17 @@ public class DashboardController {
     }
 
     @GetMapping("/uploads/{filename:.+}")
-    public ResponseEntity<?> serveFile(@PathVariable String filename) {
-        try {
-            Path filePath = Paths.get("/home/sweappdomain/demobackend/uploads/").resolve(filename);
+    public ResponseEntity<?> serveFile(@PathVariable String filename) throws IOException {
+        Path filePath = Paths.get("/home/sweappdomain/demobackend/uploads/").resolve(filename);
+        if (Files.exists(filePath)) {
             Resource resource = new FileSystemResource(filePath);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE,
-                            Files.probeContentType(filePath)).body(resource);
-        } catch (FileNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                    .header(HttpHeaders.CONTENT_TYPE, Files.probeContentType(filePath)).body(resource);
+        } else {
+            Path defaultFilePath = Paths.get("/home/sweappdomain/demobackend/uploads/default.jpg");
+            Resource resource = new FileSystemResource(defaultFilePath);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, Files.probeContentType(defaultFilePath)).body(resource);
         }
-
     }
-
 }

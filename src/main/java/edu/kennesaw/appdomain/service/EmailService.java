@@ -1,12 +1,11 @@
 package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.config.MailConfig;
+import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,16 +13,15 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.ParseException;
+import java.util.*;
 
 @Service
 public class EmailService {
-
-    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     @Autowired
     private JavaMailSender mailSender;
@@ -33,6 +31,9 @@ public class EmailService {
 
     @Autowired
     private MailConfig mailConfig;
+
+    @Autowired
+    private MailboxReaderService mailboxReaderService;
 
     public void sendVerificationEmail(String to, String verifyLink) {
         MimeMessage mm = mailSender.createMimeMessage();
@@ -195,24 +196,24 @@ public class EmailService {
         mailSender.send(mm);
     }
 
-    public void sendAdminEmail(String to, User from, String subject, String body) {
-        JavaMailSender adminMailSender = mailConfig.getAdminMailSender(from.getUsername().toLowerCase(), from.getEmailPassword());
+    public void sendAdminEmail(String to, String from, String subject, String body) {
+        String emailPassword = userRepository.findByUsername(from).getEmailPassword();
+        JavaMailSender adminMailSender = mailConfig.getAdminMailSender(from.toLowerCase(), emailPassword);
         MimeMessage mm = adminMailSender.createMimeMessage();
         try {
-            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(mm, false, "UTF-8");
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(body, false);
-            helper.setFrom(from.getUsername().toLowerCase() + "@synergyaccounting.app");
+            helper.setText(body);
+            helper.setFrom(from.toLowerCase() + "@synergyaccounting.app");
             mm.setHeader("Message-ID", "<" + System.currentTimeMillis() + "@synergyaccounting.app>");
             mm.setHeader("X-Mailer", "JavaMailer");
-            mm.setHeader("Return-Path", from.getUsername().toLowerCase() + "@synergyaccounting.app");
-            mm.setHeader("Reply-To", from.getUsername().toLowerCase() + "@synergyaccounting.app");
+            mm.setHeader("Return-Path", from.toLowerCase() + "@synergyaccounting.app");
+            mm.setHeader("Reply-To", from.toLowerCase() + "@synergyaccounting.app");
             mm.setSentDate(new Date());
             adminMailSender.send(mm);
         } catch (MessagingException e) {
             System.err.println("Error sending email: " + e.getMessage());
-            log.error("e: ", e);
         }
     }
 
@@ -247,5 +248,75 @@ public class EmailService {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    public List<AdminEmailObject> getUserEmails(String username) {
+        try {
+            List<String> rawEmails = mailboxReaderService.getUserEmails(username);
+            return mailboxReaderService.parseRawEmailsToObject(rawEmails);
+        } catch (IOException | ParseException e) {
+            System.err.println(e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    public String simpleConvertTextToHtml(String text) {
+        String html = "<html><body>";
+        html += "<p>" + text.replaceAll("\n", "<br>") + "</p>";
+        html += "</body></html>";
+        return html;
+    }
+
+    public boolean deleteEmails(AdminEmailObject[] emails) {
+
+        if (emails.length != 0) {
+
+            String userToString = emails[0].getTo().replaceAll("<", "")
+                    .replaceAll(">", "").replaceAll("\"", "");
+            userToString = userToString.trim();
+            String userToString2 = userToString;
+            int index = userToString.indexOf(' ');
+            if (index != -1) {
+                userToString = userToString.substring(0, index);
+                userToString2 = userToString2.substring(1, index);
+            }
+            index = userToString.indexOf('@');
+            if (index != -1) {
+                userToString = userToString.substring(0, index);
+            }
+            index = userToString2.indexOf('@');
+            if (index != -1) {
+                userToString2 = userToString2.substring(0, index);
+            }
+            System.out.println("User to String: " + userToString);
+            System.out.println("User to String 2: " + userToString2);
+
+            User user = userRepository.findByUsername(userToString) != null?
+                        userRepository.findByUsername(userToString):
+                        userRepository.findByUsername(userToString2);
+
+            if (user == null) {
+                System.out.println("User not found.");
+                return false;
+            }
+            System.out.println("User found. Looping through emails.");
+
+            for (AdminEmailObject aeo : emails) {
+
+                String fileName = aeo.getId();
+                Path emailFilePath = Paths.get(MailboxReaderService.VMAIL_PATH + user.getUsername().toLowerCase()
+                        + "/new/" + fileName);
+                System.out.println("Deleting email: " + emailFilePath);
+
+                try {
+                    Files.deleteIfExists(emailFilePath);
+                    System.out.println("Deleted email: " + fileName);
+                } catch (IOException e) {
+                    System.err.println("Failed to delete email: " + fileName + " due to: " + e.getMessage());
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

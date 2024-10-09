@@ -1,6 +1,6 @@
 package edu.kennesaw.appdomain.controller;
 
-import edu.kennesaw.appdomain.UserType;
+import edu.kennesaw.appdomain.types.UserType;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.ConfirmationToken;
 import edu.kennesaw.appdomain.entity.PasswordResetToken;
@@ -22,10 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;

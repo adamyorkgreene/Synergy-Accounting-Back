@@ -1,6 +1,6 @@
 package edu.kennesaw.appdomain.service;
 
-import edu.kennesaw.appdomain.UserType;
+import edu.kennesaw.appdomain.types.UserType;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.UserDTO;
 import edu.kennesaw.appdomain.entity.User;
@@ -14,6 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.UUID;
 
@@ -120,6 +123,13 @@ public class AdminService {
 
         if (!oldUsername.equals(existingUser.getUsername())) {
             scriptService.updateUsername(oldUsername.toLowerCase(), existingUser.getUsername().toLowerCase());
+        }
+
+        Path oldFilePath = Paths.get("/home/sweappdomain/demobackend/uploads/").resolve(oldUsername + ".jpg");
+        Path newFilePath = Paths.get("/home/sweappdomain/demobackend/uploads/").resolve(existingUser.getUsername() + ".jpg");
+
+        if (Files.exists(oldFilePath)) {
+            Files.move(oldFilePath, newFilePath);
         }
 
         return ResponseEntity.ok(existingUser);

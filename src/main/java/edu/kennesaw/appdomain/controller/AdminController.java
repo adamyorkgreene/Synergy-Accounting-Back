@@ -9,7 +9,6 @@ import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.AdminService;
 import edu.kennesaw.appdomain.service.EmailService;
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 @CrossOrigin(origins = "https://synergyaccounting.app", allowCredentials = "true")
@@ -75,9 +75,27 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/send-email")
-    public ResponseEntity<?> sendAdminEmail(@RequestBody AdminEmailObject aem) throws MessagingException {
+    public ResponseEntity<?> sendAdminEmail(@RequestBody AdminEmailObject aem) {
         emailService.sendAdminEmail(aem.getTo(), aem.getFrom(), aem.getSubject(), aem.getBody());
         return ResponseEntity.ok().body(new MessageResponse("Email sent.")) ;
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @GetMapping("/emails/{username}")
+    public ResponseEntity<?> getMail(@PathVariable("username") String username) {
+        List<AdminEmailObject> emails = emailService.getUserEmails(username);
+        if (emails.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("No emails found."));
+        }
+        return ResponseEntity.ok(emails);
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PostMapping("/emails/delete")
+    public ResponseEntity<?> deleteMail(@RequestBody AdminEmailObject[] emails) {
+        if (emails.length == 0) return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Selection is Empty!");
+        if (emailService.deleteEmails(emails)) return ResponseEntity.ok(new MessageResponse("Email deleted successfully!"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Email could not be deleted!"));
     }
 
 }

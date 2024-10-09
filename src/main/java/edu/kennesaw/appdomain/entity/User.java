@@ -1,7 +1,7 @@
 package edu.kennesaw.appdomain.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import edu.kennesaw.appdomain.UserType;
+import edu.kennesaw.appdomain.types.UserType;
 import jakarta.persistence.*;
 
 import java.util.Date;
@@ -37,13 +37,13 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column
     private Date birthday;
 
     @Column(nullable = false)
     private Date joinDate;
 
-    @Column(nullable = false)
+    @Column
     private String address;
 
     @Column(nullable = false)

@@ -1,6 +1,5 @@
 package edu.kennesaw.appdomain.service;
 
-import edu.kennesaw.appdomain.UserType;
 import edu.kennesaw.appdomain.dto.LoginRequest;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.RegistrationRequest;
@@ -24,10 +23,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.UUID;
 
 @Service
