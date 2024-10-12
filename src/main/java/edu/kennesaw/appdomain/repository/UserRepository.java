@@ -1,17 +1,29 @@
 package edu.kennesaw.appdomain.repository;
 
+import edu.kennesaw.appdomain.dto.AccountResponseDTO;
 import edu.kennesaw.appdomain.entity.User;
+import edu.kennesaw.appdomain.entity.UserDate;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    User findByUsername(String username);
-    User findByEmail(String email);
-    User findByUserid(long userid);
-    List<User> findAllByLastPasswordResetIsBetween(Date before, Date after);
+    Optional<User> findByUsername(String username);
+
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByUserid(long userid);
+
+    List<User> findByUserDateIn(List<UserDate> userDates);
+
+    @Query("SELECT u.username FROM User u WHERE u.userid = :userid")
+    String getUsernameByUserid(long userid);
+
+    Long findUserSecurityIdByEmail(String email);
+
 }

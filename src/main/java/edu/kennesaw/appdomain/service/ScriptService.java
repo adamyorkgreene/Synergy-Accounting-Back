@@ -17,7 +17,7 @@ public class ScriptService {
 
     public void createMailbox(User user) throws IOException, InterruptedException {
         String username = user.getUsername().toLowerCase();
-        String emailPassword = user.getEmailPassword();
+        String emailPassword = user.getUserSecurity().getEmailPassword();
         String scriptPath = "/home/sweappdomain/demobackend/scripts/add_vmailbox_user.sh";
         log.info("Running script with arguments: sudo {}, {}, {}", scriptPath, username, emailPassword);
         if (username.isEmpty() || emailPassword == null || emailPassword.isEmpty()) {

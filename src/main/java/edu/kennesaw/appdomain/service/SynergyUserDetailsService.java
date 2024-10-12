@@ -16,13 +16,14 @@ public class SynergyUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email).isPresent() ? userRepository.findByEmail(email).get()
+                : null;
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword())
+                .password(user.getUserSecurity().getPassword())
                 .roles(user.getUserType().name())
                 .build();
         }
