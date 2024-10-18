@@ -1,5 +1,7 @@
 package edu.kennesaw.appdomain.service;
 
+import edu.kennesaw.appdomain.entity.UserDate;
+import edu.kennesaw.appdomain.entity.UserSecurity;
 import edu.kennesaw.appdomain.types.UserType;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.UserDTO;
@@ -18,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -42,32 +45,36 @@ public class AdminService {
 
         userDTO.setIsIncomplete(false);
 
-        final User user = new User();
+        User user = new User();
 
         userDTO.getEmail().ifPresentOrElse(user::setEmail, () -> userDTO.setIsIncomplete(true));
         userDTO.getFirstName().ifPresentOrElse(user::setFirstName, () -> userDTO.setIsIncomplete(true));
         userDTO.getLastName().ifPresentOrElse(user::setLastName, () -> userDTO.setIsIncomplete(true));
         userDTO.getUserType().ifPresentOrElse(user::setUserType, () -> userDTO.setIsIncomplete(true));
+        user.setAddress(userDTO.getAddress().isPresent() ? userDTO.getAddress().get() : null);
+        user.setUsername(ServiceUtils.generateUsername(user.getFirstName(), user.getLastName(), userRepository));
 
         if (userDTO.getIsIncomplete()) throw new UserAttributeMissingException("Missing essential user data attributes.");
 
-        user.setBirthday(userDTO.getBirthday().isPresent() ? userDTO.getBirthday().get(): null);
-        user.setAddress(userDTO.getAddress().isPresent() ? userDTO.getAddress().get() : null);
-
-        String uuid = UUID.randomUUID().toString();
-
-        user.setPassword(passwordEncoder.encode(uuid));
-        user.setUsername(ServiceUtils.generateUsername(user.getFirstName(), user.getLastName(), userRepository));
-
-        if (userRepository.findByEmail(user.getEmail()) != null) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("This user already exists."));
         }
 
-        user.setIsActive(true);
-        user.setIsVerified(true);
-        user.setFailedLoginAttempts(0);
+        UserDate userDate = new UserDate();
+        userDate.setBirthday(userDTO.getBirthday().isPresent() ? userDTO.getBirthday().get(): null);
+        userDate.setJoinDate(new Date());
+        userDate.setUser(user);
 
-        user.setJoinDate(new Date());
+        UserSecurity userSecurity = new UserSecurity();
+        String uuid = UUID.randomUUID().toString();
+        userSecurity.setPassword(passwordEncoder.encode(uuid));
+        userSecurity.setIsActive(true);
+        userSecurity.setIsVerified(true);
+        userSecurity.setFailedLoginAttempts(0);
+        userSecurity.setUser(user);
+
+        user.setUserDate(userDate);
+        user.setUserSecurity(userSecurity);
 
         User createdUser = userRepository.save(user);
 
@@ -86,11 +93,13 @@ public class AdminService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error passing userid."));
         }
 
-        User existingUser = userRepository.findByUserid(userDetails.getUserid().get());
+        Optional<User> optionalExistingUser = userRepository.findByUserid(userDetails.getUserid().get());
 
-        if (existingUser == null) {
+        if (optionalExistingUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("User not found."));
         }
+
+        User existingUser = optionalExistingUser.get();
 
         String oldUsername = existingUser.getUsername();
 
@@ -110,14 +119,14 @@ public class AdminService {
         existingUser.setUsername(userDetails.getUsername().isEmpty() ? existingUser.getUsername() : userDetails.getUsername().get());
         existingUser.setFirstName(userDetails.getFirstName().isEmpty() ? existingUser.getLastName() : userDetails.getFirstName().get());
         existingUser.setLastName(userDetails.getLastName().isEmpty() ? existingUser.getLastName() : userDetails.getLastName().get());
-        existingUser.setBirthday(userDetails.getBirthday().isEmpty() ? existingUser.getBirthday() : userDetails.getBirthday().get());
-        existingUser.setIsVerified(userDetails.getIsVerified().isEmpty() ? existingUser.isVerified() : userDetails.getIsVerified().get());
-        existingUser.setIsActive(userDetails.getIsActive().isEmpty() ? existingUser.isActive() : userDetails.getIsActive().get());
+        existingUser.getUserDate().setBirthday(userDetails.getBirthday().isEmpty() ? existingUser.getUserDate().getBirthday() : userDetails.getBirthday().get());
+        existingUser.getUserSecurity().setIsVerified(userDetails.getIsVerified().isEmpty() ? existingUser.getUserSecurity().getIsVerified() : userDetails.getIsVerified().get());
+        existingUser.getUserSecurity().setIsActive(userDetails.getIsActive().isEmpty() ? existingUser.getUserSecurity().getIsActive() : userDetails.getIsActive().get());
         existingUser.setUserType(userDetails.getUserType().isEmpty() ? existingUser.getUserType() : userDetails.getUserType().get());
-        existingUser.setFailedLoginAttempts(userDetails.getFailedPasswordAttempts().isEmpty() ? existingUser.getFailedLoginAttempts() : userDetails.getFailedPasswordAttempts().get());
-        existingUser.setTempLeaveStart(userDetails.getTempLeaveStart().isEmpty() ? existingUser.getTempLeaveStart() : userDetails.getTempLeaveStart().get());
-        existingUser.setTempLeaveEnd(userDetails.getTempLeaveEnd().isEmpty() ? existingUser.getTempLeaveEnd() : userDetails.getTempLeaveEnd().get());
-        existingUser.setEmailPassword(userDetails.getEmailPassword().isEmpty() ? existingUser.getEmailPassword() : userDetails.getEmailPassword().get());
+        existingUser.getUserSecurity().setFailedLoginAttempts(userDetails.getFailedPasswordAttempts().isEmpty() ? existingUser.getUserSecurity().getFailedLoginAttempts() : userDetails.getFailedPasswordAttempts().get());
+        existingUser.getUserDate().setTempLeaveStart(userDetails.getTempLeaveStart().isEmpty() ? existingUser.getUserDate().getTempLeaveStart() : userDetails.getTempLeaveStart().get());
+        existingUser.getUserDate().setTempLeaveEnd(userDetails.getTempLeaveEnd().isEmpty() ? existingUser.getUserDate().getTempLeaveEnd() : userDetails.getTempLeaveEnd().get());
+        existingUser.getUserSecurity().setEmailPassword(userDetails.getEmailPassword().isEmpty() ? existingUser.getUserSecurity().getEmailPassword() : userDetails.getEmailPassword().get());
 
         userRepository.save(existingUser);
 
@@ -137,8 +146,12 @@ public class AdminService {
     }
 
     public ResponseEntity<?> setActiveStatus(Long id, boolean status) {
-        User user = userRepository.findByUserid(id);
-        user.setIsActive(status);
+        User user = userRepository.findByUserid(id).isPresent() ? userRepository.findByUserid(id).get() :
+                null;
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        user.getUserSecurity().setIsActive(status);
         userRepository.save(user);
         return ResponseEntity.ok(new MessageResponse("User: "+ (status ? "activated" : "deactivated") + "successfully"));
     }

@@ -14,9 +14,9 @@ public class ServiceUtils {
         String username = firstName.charAt(0) + lastName
                 + month.format(gc.getTime()) + year.format(gc.getTime()
         );
-        if (userRepository.findByUsername(username) != null) {
+        if (userRepository.findByUsername(username).isPresent()) {
             int increment = 1;
-            while (userRepository.findByUsername(username) != null) {
+            while (userRepository.findByUsername(username).isPresent()) {
                 username += "-" + increment;
                 increment++;
             }

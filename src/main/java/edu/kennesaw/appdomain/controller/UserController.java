@@ -119,7 +119,7 @@ public class UserController {
         }
 
         User user = verifyToken.getUser();
-        user.setIsVerified(true);
+        user.getUserSecurity().setIsVerified(true);
         userRepository.save(user);
         verificationRepository.delete(verifyToken);
 

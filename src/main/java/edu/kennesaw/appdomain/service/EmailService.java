@@ -3,6 +3,8 @@ package edu.kennesaw.appdomain.service;
 import edu.kennesaw.appdomain.config.MailConfig;
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.entity.User;
+import edu.kennesaw.appdomain.entity.UserDate;
+import edu.kennesaw.appdomain.repository.UserDateRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -28,6 +30,9 @@ public class EmailService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserDateRepository userDateRepository;
 
     @Autowired
     private MailConfig mailConfig;
@@ -106,7 +111,7 @@ public class EmailService {
             helper.setText("The following user has registered for SynergyAccounting and must be approved: \n"
                     + "First Name: " + user.getFirstName() + "\n"
                     + "Last Name: " + user.getLastName() + "\n"
-                    + "DOB: " + user.getBirthday().toString() + "\n"
+                    + "DOB: " + user.getUserDate().getBirthday().toString() + "\n"
                     + "Email Address: " + user.getEmail() + "\n"
                     + "Home Address: " + user.getAddress() + "\n"
                     + "Please approve verification using this link: " + confirmationLink
@@ -197,7 +202,7 @@ public class EmailService {
     }
 
     public void sendAdminEmail(String to, String from, String subject, String body) {
-        String emailPassword = userRepository.findByUsername(from).getEmailPassword();
+        String emailPassword = userRepository.findByUsername(from).get().getUserSecurity().getEmailPassword();
         JavaMailSender adminMailSender = mailConfig.getAdminMailSender(from.toLowerCase(), emailPassword);
         MimeMessage mm = adminMailSender.createMimeMessage();
         try {
@@ -231,13 +236,16 @@ public class EmailService {
 
         Date after = cal.getTime();
 
-        List<User> usersWithExpiringPasswords = userRepository.findAllByLastPasswordResetIsBetween(before, after);
+        List<UserDate> userDatesWithExpiringPasswords = userDateRepository.findUserDatesByLastPasswordResetBetween
+                (before, after);
+
+        List<User> usersWithExpiringPasswords = userRepository.findByUserDateIn(userDatesWithExpiringPasswords);
 
         for (int i = 0; i < usersWithExpiringPasswords.size(); i += 1) {
             int end = Math.min(usersWithExpiringPasswords.size(), i + 1);
             List<User> batch = usersWithExpiringPasswords.subList(i, end);
             for (User user : batch) {
-                cal.setTime(user.getLastPasswordReset());
+                cal.setTime(user.getUserDate().getLastPasswordReset());
                 cal.add(Calendar.DAY_OF_YEAR, 90);
                 Date expirationDate = cal.getTime();
                 sendPasswordExpirationNotification(user, expirationDate);
@@ -291,9 +299,11 @@ public class EmailService {
             System.out.println("User to String: " + userToString);
             System.out.println("User to String 2: " + userToString2);
 
-            User user = userRepository.findByUsername(userToString) != null?
-                        userRepository.findByUsername(userToString):
-                        userRepository.findByUsername(userToString2);
+            User user = userRepository.findByUsername(userToString).isPresent() ?
+                        userRepository.findByUsername(userToString).get():
+                        userRepository.findByUsername(userToString2).isPresent() ?
+                        userRepository.findByUsername(userToString2).get():
+                        null;
 
             if (user == null) {
                 System.out.println("User not found.");

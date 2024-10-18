@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import edu.kennesaw.appdomain.types.AccountCategory;
 import edu.kennesaw.appdomain.types.AccountSubCategory;
 import edu.kennesaw.appdomain.types.AccountType;
@@ -8,13 +9,14 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Account {
 
     @Column(nullable = false)
     private String accountName;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false)
     private Long accountNumber;
 
     @Column(nullable = false)
@@ -42,14 +44,14 @@ public class Account {
     private double creditBalance;
 
     @Column(nullable = false)
-    private double currentBalance;
-
-    @Column(nullable = false)
     private Date dateAdded;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "userid")
     private User creator;
+
+    @Column(nullable = false)
+    private Boolean isActive = true;
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -123,14 +125,6 @@ public class Account {
         return creditBalance;
     }
 
-    public void setCurrentBalance(double currentBalance) {
-        this.currentBalance = currentBalance;
-    }
-
-    public double getCurrentBalance() {
-        return currentBalance;
-    }
-
     public void setDateAdded(Date dateAdded) {
         this.dateAdded = dateAdded;
     }
@@ -145,6 +139,14 @@ public class Account {
 
     public User getCreator() {
         return creator;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public boolean getIsActive() {
+        return isActive;
     }
 
 }

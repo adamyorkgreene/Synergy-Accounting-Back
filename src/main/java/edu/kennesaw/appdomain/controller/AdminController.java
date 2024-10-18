@@ -57,32 +57,28 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/usersearch")
     public ResponseEntity<?> findUser(@RequestBody UserDTO user) {
-        User foundById = null;
-        User foundByEmail = null;
-        User foundByUsername = null;
+        int userid = 0;
+        String email = "";
+        String username = "";
         if (user.getUserid().isPresent()) {
-            foundById = userRepository.findByUserid(user.getUserid().get());
+            userid = user.getUserid().get();
         }
         if (user.getEmail().isPresent()) {
-            foundByEmail = userRepository.findByEmail(user.getEmail().get());
+            email = user.getEmail().get();
         }
         if (user.getUsername().isPresent()) {
-            foundByUsername = userRepository.findByUsername(user.getUsername().get());
+            username = user.getUsername().get();
         }
-        if (foundById == null && foundByEmail == null && foundByUsername == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("That user does not exist."));
+        if (userRepository.findById(Integer.toUnsignedLong(userid)).isPresent()) {
+            return ResponseEntity.ok(userRepository.findById(Integer.toUnsignedLong(userid)).get());
         }
-        if ((foundById != null && foundByEmail != null && !foundById.equals(foundByEmail)) ||
-                (foundById != null && foundByUsername != null && !foundById.equals(foundByUsername)) ||
-                (foundByEmail != null && foundByUsername != null && !foundByEmail.equals(foundByUsername))) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new MessageResponse("Multiple fields correspond to different users."));
+        if (userRepository.findByEmail(email).isPresent()) {
+            return ResponseEntity.ok(userRepository.findByEmail(email).get());
         }
-        User foundUser = foundById != null ? foundById :
-                foundByEmail != null ? foundByEmail :
-                        foundByUsername;
-        return ResponseEntity.ok(foundUser);
+        if (userRepository.findByUsername(username).isPresent()) {
+            return ResponseEntity.ok(userRepository.findByUsername(username));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
 
