@@ -81,11 +81,9 @@ public class AccountController {
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @PostMapping("/chart-of-accounts/deactivate-accounts")
-    public ResponseEntity<?> deactivateAccounts(@RequestBody AccountResponseDTO[] accounts) {
-        if (accounts.length == 0) return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Selection is Empty!");
-        if (accountService.deactivateAccounts(accounts)) return ResponseEntity.ok(new MessageResponse("Accounts deactivated successfully!"));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Accounts could not be deleted!"));
+    @PostMapping("/chart-of-accounts/update-activation")
+    public ResponseEntity<?> deactivateAccounts(@RequestBody AccountResponseDTO account) {
+        return accountService.deactivateAccount(account);
     }
 
 }

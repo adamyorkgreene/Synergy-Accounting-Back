@@ -187,26 +187,17 @@ public class AccountService {
     }
 
     @Transactional
-    public boolean deactivateAccounts(AccountResponseDTO[] accountsToDelete) {
-        for (AccountResponseDTO accountDTO : accountsToDelete) {
-            Optional<Account> accountOptional = accountRepository.findById(accountDTO.getAccountNumber());
-            if (accountOptional.isPresent()) {
-                Account account = accountOptional.get();
-                List<Transaction> transactions = transactionRepository.findByAccountAccountNumber(account.getAccountNumber());
-                for (Transaction transaction : transactions) {
-                    if (transaction.getTransactionType().equals(AccountType.DEBIT)) {
-                        account.setDebitBalance(account.getDebitBalance() - transaction.getAmount());
-                    } else {
-                        account.setCreditBalance(account.getCreditBalance() - transaction.getAmount());
-                    }
-                    transactionRepository.delete(transaction);
-                }
-                account.setIsActive(false);
-            } else {
-                return false;
-            }
+    public ResponseEntity<?> deactivateAccount(AccountResponseDTO accountDTO) {
+        Optional<Account> accountOptional = accountRepository.findById(accountDTO.getAccountNumber());
+        if (accountOptional.isPresent()) {
+            Account account = accountOptional.get();
+            List<Transaction> transactions = transactionRepository.findByAccountAccountNumber(account.getAccountNumber());
+            if (!transactions.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("You may not deactivate an account with existing transactions."));
+            account.setIsActive(!account.getIsActive());
+            return ResponseEntity.ok(accountRepository.save(account));
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("This account does not exist."));
         }
-        return true;
     }
 
     private Long generateAccountNumber(AccountCategory category) {
