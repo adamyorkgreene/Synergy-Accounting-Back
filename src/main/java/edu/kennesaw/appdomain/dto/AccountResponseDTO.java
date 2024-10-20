@@ -35,7 +35,7 @@ public class AccountResponseDTO {
         this.creditBalance = creditBalance;
         this.dateAdded = dateAdded;
         this.username = username;
-        this.isActive = false;
+        this.isActive = isActive;
     }
 
     public String getAccountName() {
