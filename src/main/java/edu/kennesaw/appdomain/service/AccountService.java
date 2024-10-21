@@ -1,9 +1,6 @@
 package edu.kennesaw.appdomain.service;
 
-import edu.kennesaw.appdomain.dto.AccountResponseDTO;
-import edu.kennesaw.appdomain.dto.MessageResponse;
-import edu.kennesaw.appdomain.dto.TransactionDTO;
-import edu.kennesaw.appdomain.dto.TransactionResponseDTO;
+import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.Account;
 import edu.kennesaw.appdomain.entity.Transaction;
 import edu.kennesaw.appdomain.entity.User;
@@ -161,6 +158,19 @@ public class AccountService {
             return transactionRepository.save(transaction);
         } else {
             throw new IllegalArgumentException("Transaction not found.");
+        }
+    }
+
+    @Transactional
+    public Account updateAccount(UpdateAccountDTO accountDTO) {
+        Optional<Account> accountOptional = accountRepository.findById(accountDTO.getAccountNumber());
+        if (accountOptional.isPresent()) {
+            Account account = accountOptional.get();
+            account.setAccountName(accountDTO.getAccountName());
+            account.setAccountDescription(accountDTO.getAccountDescription());
+            return accountRepository.save(account);
+        } else {
+            throw new IllegalArgumentException("Account not found");
         }
     }
 

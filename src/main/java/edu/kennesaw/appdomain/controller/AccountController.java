@@ -65,6 +65,16 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PostMapping("/chart-of-accounts/update-account")
+    public ResponseEntity<Account> updateAccount(@RequestBody UpdateAccountDTO accountDTO) {
+        Account updatedAccount = accountService.updateAccount(accountDTO);
+        if (updatedAccount != null) {
+            return ResponseEntity.ok(updatedAccount);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @GetMapping("/chart-of-accounts/{accountNumber}")
