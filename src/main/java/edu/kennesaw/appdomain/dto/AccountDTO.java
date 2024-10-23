@@ -13,7 +13,7 @@ public class AccountDTO {
     private AccountType normalSide;
     private AccountCategory accountCategory;
     private AccountSubCategory accountSubCategory;
-    private Double initialBalance;
+    private Double initialBalance = 0.0;
     private Integer creator;
     private Boolean isActive;
 
@@ -67,6 +67,9 @@ public class AccountDTO {
     }
 
     public double getInitialBalance() {
+        if (initialBalance == null || initialBalance == 0 || initialBalance.isNaN()) {
+            return 0.0;
+        }
         return initialBalance;
     }
 

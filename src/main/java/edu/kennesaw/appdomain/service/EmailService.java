@@ -262,7 +262,7 @@ public class EmailService {
         try {
             List<String> rawEmails = mailboxReaderService.getUserEmails(username);
             return mailboxReaderService.parseRawEmailsToObject(rawEmails);
-        } catch (IOException | ParseException e) {
+        } catch (IOException | ParseException | MessagingException e) {
             System.err.println(e.getMessage());
             return Collections.emptyList();
         }

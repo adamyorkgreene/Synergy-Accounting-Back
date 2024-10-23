@@ -107,4 +107,16 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Email could not be deleted!"));
     }
 
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @GetMapping("/get-all-emails/accountant")
+    public ResponseEntity<?> getAllAccountantEmails() {
+        return adminService.getAllAccountantEmails();
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @GetMapping("/get-all-emails/manager")
+    public ResponseEntity<?> getAllManagerEmails() {
+        return adminService.getAllManagerEmails();
+    }
+
 }

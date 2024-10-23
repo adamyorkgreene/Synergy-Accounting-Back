@@ -19,9 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class AdminService {
@@ -154,6 +152,22 @@ public class AdminService {
         user.getUserSecurity().setIsActive(status);
         userRepository.save(user);
         return ResponseEntity.ok(new MessageResponse("User: "+ (status ? "activated" : "deactivated") + "successfully"));
+    }
+
+    public ResponseEntity<List<String>> getAllAccountantEmails() {
+        List<String> emails = new ArrayList<>();
+        userRepository.getAllUsersByUserType(UserType.ACCOUNTANT).forEach(user -> {
+            emails.add(user.getEmail());
+        });
+        return ResponseEntity.ok(emails);
+    }
+
+    public ResponseEntity<List<String>> getAllManagerEmails() {
+        List<String> emails = new ArrayList<>();
+        userRepository.getAllUsersByUserType(UserType.MANAGER).forEach(user -> {
+            emails.add(user.getEmail());
+        });
+        return ResponseEntity.ok(emails);
     }
 
 }

@@ -24,7 +24,7 @@ public class AccountController {
     @Autowired
     private AccountRepository accountRepository;
 
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
     @GetMapping("/chart-of-accounts")
     public List<AccountResponseDTO> getChartOfAccounts() {
         return accountService.getChartOfAccountsWithUsername();

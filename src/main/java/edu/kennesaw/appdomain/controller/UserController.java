@@ -136,7 +136,7 @@ public class UserController {
             int end = Math.min(admins.size(), i + 1);
             List<User> batch = admins.subList(i, end);
             for (User admin : batch) {
-                emailService.sendAdminConfirmEmail(admin.getEmail(), user, confirmLink);
+                emailService.sendAdminConfirmEmail(admin.getUsername() + "@synergyaccounting.app", user, confirmLink);
             }
             try {
                 Thread.sleep(3000);

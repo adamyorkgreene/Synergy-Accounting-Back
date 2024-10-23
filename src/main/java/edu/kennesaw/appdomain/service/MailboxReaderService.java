@@ -1,11 +1,11 @@
 package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
+import jakarta.mail.*;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,12 +66,12 @@ public class MailboxReaderService {
 
     }
 
-    public List<AdminEmailObject> parseRawEmailsToObject(List<String> rawEmails) throws IOException, ParseException {
+    public List<AdminEmailObject> parseRawEmailsToObject(List<String> rawEmails) throws IOException, ParseException, MessagingException {
 
         List<AdminEmailObject> objectEmails = new ArrayList<>();
 
         for (String rawEmail : rawEmails) {
-            objectEmails.add(parseRawEmailToObject(rawEmail));
+            objectEmails.add(parseEmail(rawEmail));
         }
 
         return objectEmails;
@@ -166,6 +166,48 @@ public class MailboxReaderService {
         return body.toString();
 
     }
+
+    private AdminEmailObject parseEmail(String rawEmail) throws MessagingException, IOException {
+        Session s = Session.getInstance(new Properties());
+        InputStream is = new ByteArrayInputStream(rawEmail.getBytes());
+        MimeMessage message = new MimeMessage(s, is);
+        AdminEmailObject emailObject = new AdminEmailObject();
+        BufferedReader br = new BufferedReader(new StringReader(rawEmail));
+        emailObject.setId(br.readLine());
+        br.close();
+        emailObject.setDate(message.getSentDate());
+        emailObject.setSubject(message.getSubject());
+        emailObject.setBody(getTextFromMessage(message));
+        emailObject.setTo(message.getRecipients(Message.RecipientType.TO)[0].toString());
+        emailObject.setFrom(message.getFrom()[0].toString());
+        return emailObject;
+    }
+
+    private String getTextFromMessage(MimeMessage message) throws MessagingException, IOException {
+        Object content = message.getContent();
+        if (content instanceof String) {
+            return (String) content;
+        } else if (content instanceof Multipart) {
+            return getTextFromMultipart((Multipart) content);
+        }
+        return "";
+    }
+
+    private String getTextFromMultipart(Multipart multipart) throws MessagingException, IOException {
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+
+            if (bodyPart.isMimeType("text/plain")) {
+                return (String) bodyPart.getContent();
+            } else if (bodyPart.isMimeType("text/html")) {
+                return (String) bodyPart.getContent();
+            } else if (bodyPart.getContent() instanceof Multipart) {
+                return getTextFromMultipart((Multipart) bodyPart.getContent());
+            }
+        }
+        return "";
+    }
+
 
     private AdminEmailObject parseRawEmailToObject(String rawEmail) throws IOException, ParseException {
 

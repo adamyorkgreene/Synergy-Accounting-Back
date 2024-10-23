@@ -3,6 +3,7 @@ package edu.kennesaw.appdomain.repository;
 import edu.kennesaw.appdomain.dto.AccountResponseDTO;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.entity.UserDate;
+import edu.kennesaw.appdomain.types.UserType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -25,5 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     String getUsernameByUserid(long userid);
 
     Long findUserSecurityIdByEmail(String email);
+
+    List<User> getAllUsersByUserType(UserType userType);
 
 }

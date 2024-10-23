@@ -141,7 +141,7 @@ public class UserSecurity {
 
     private String generateRandomPassword() {
         int length = 16;
-        String charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_+=<>?";
+        String charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?";
         Random random = new Random();
         StringBuilder password = new StringBuilder();
         for (int i = 0; i < length; i++) {
@@ -149,5 +149,4 @@ public class UserSecurity {
         }
         return password.toString();
     }
-
 }

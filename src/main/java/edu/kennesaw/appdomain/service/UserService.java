@@ -47,7 +47,7 @@ public class UserService {
 
     public ResponseEntity<?> registerUser(RegistrationRequest registrationRequest) {
 
-        if (userRepository.findByEmail(registrationRequest.getEmail()) != null) {
+        if (userRepository.findByEmail(registrationRequest.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new MessageResponse("An account already exists using this email."));
         }
