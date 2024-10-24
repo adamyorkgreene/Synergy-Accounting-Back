@@ -3,9 +3,11 @@ package edu.kennesaw.appdomain.service;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.Account;
 import edu.kennesaw.appdomain.entity.Transaction;
+import edu.kennesaw.appdomain.entity.TransactionRequest;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.repository.AccountRepository;
 import edu.kennesaw.appdomain.repository.TransactionRepository;
+import edu.kennesaw.appdomain.repository.TransactionRequestRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.utils.AccountNumberGenerator;
 import edu.kennesaw.appdomain.types.AccountCategory;
@@ -16,12 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +36,12 @@ public class AccountService {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private TransactionRequestRepository transactionRequestRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     public List<AccountResponseDTO> getChartOfAccounts() {
         List<Account> accounts = accountRepository.findAll(Sort.by(Sort.Direction.ASC, "accountNumber"));
@@ -106,11 +113,8 @@ public class AccountService {
     }
 
     @Transactional
-    public Transaction addTransaction(Long accountNumber, String transactionDescription, Double transactionAmount,
+    public Transaction addTransaction(Account account, String transactionDescription, Double transactionAmount,
                                       AccountType transactionType) {
-
-        Account account = accountRepository.findById(accountNumber)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountNumber));
 
         if (!account.getIsActive()) {
             return null;
@@ -134,6 +138,105 @@ public class AccountService {
         return transactionRepository.save(transaction);
 
     }
+
+    @Transactional
+    public TransactionRequest addTransactionRequest(Account account, String transactionDescription, Double transactionAmount,
+                                      AccountType transactionType, String token, User user) {
+
+        if (!account.getIsActive()) {
+            return null;
+        }
+
+        TransactionRequest transaction = new TransactionRequest();
+        transaction.setAccount(account);
+        transaction.setDescription(transactionDescription);
+        transaction.setAmount(transactionAmount);
+        transaction.setTransactionType(transactionType);
+        transaction.setTransactionDate(new Date());
+        transaction.setToken(token);
+        transaction.setApproved(null);
+        transaction.setUser(user);
+
+        return transactionRequestRepository.save(transaction);
+
+    }
+
+    @Transactional
+    public ResponseEntity<?> approveJournalEntry(List<TransactionRequest> trs) {
+        for (TransactionRequest tr : trs) {
+            Transaction transaction = new Transaction();
+            transaction.setAccount(tr.getAccount());
+            transaction.setTransactionType(tr.getTransactionType());
+            transaction.setTransactionDate(tr.getTransactionDate());
+            transaction.setAmount(tr.getAmount());
+            transaction.setDescription(tr.getDescription());
+            tr.setApproved(true);
+            transactionRepository.save(transaction);
+            transactionRequestRepository.save(tr);
+        }
+        User user = trs.get(0).getUser();
+        emailService.sendBasicNoReplyEmail(user.getUsername() + "@synergyaccounting.app",
+                "Your journal entry has been approved!",
+                user.getFirstName() + ", \n\nYour journal entry has been approved and is now reflected" +
+                        " within the chart of accounts.");
+        return ResponseEntity.ok().body(new MessageResponse("This journal entry has been approved."));
+    }
+
+    @Transactional
+    public ResponseEntity<?> rejectJournalEntry(List<TransactionRequest> trs) {
+        for (TransactionRequest tr : trs) {
+            tr.setApproved(false);
+            transactionRequestRepository.save(tr);
+        }
+        return ResponseEntity.ok().body(new MessageResponse("This journal entry has been rejected."));
+    }
+
+    public List<JournalEntryRequest> getJournalEntryRequests(Boolean isApproved) {
+
+        List<TransactionRequest> trs = transactionRequestRepository.findAllByIsApprovedOrderByToken(isApproved);
+        List<JournalEntryRequest> jers = new ArrayList<>();
+        if (trs == null || trs.isEmpty()) {
+            return jers;
+        }
+
+        JournalEntryRequest currentJournalEntry = new JournalEntryRequest();
+        List<TransactionDTO> currentTransactions = new ArrayList<>();
+
+        String currentToken = trs.get(0).getToken();
+        User currentUser = trs.get(0).getUser();
+
+        for (TransactionRequest tr : trs) {
+
+            if (!tr.getToken().equals(currentToken)) {
+
+                currentJournalEntry.setTransactions(currentTransactions.toArray(new TransactionDTO[0]));
+                currentJournalEntry.setUser(currentUser);
+                jers.add(currentJournalEntry);
+
+                currentJournalEntry = new JournalEntryRequest();
+                currentTransactions = new ArrayList<>();
+                currentToken = tr.getToken();
+                currentUser = tr.getUser();
+            }
+
+            TransactionDTO transactionDTO = new TransactionDTO(
+                    tr.getAccount(),
+                    tr.getDescription(),
+                    tr.getAmount(),
+                    tr.getTransactionType()
+            );
+            transactionDTO.setTransactionId(tr.getTransactionId());
+            transactionDTO.setTransactionDate(tr.getTransactionDate());
+            currentTransactions.add(transactionDTO);
+        }
+
+        currentJournalEntry.setTransactions(currentTransactions.toArray(new TransactionDTO[0]));
+        currentJournalEntry.setUser(currentUser);
+        jers.add(currentJournalEntry);
+
+        return jers;
+    }
+
 
     @Transactional
     public Transaction updateTransaction(TransactionDTO transactionDTO) {

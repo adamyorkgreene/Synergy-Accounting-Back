@@ -28,9 +28,6 @@ public class AdminController {
     private AdminService adminService;
 
     @Autowired
-    private EmailService emailService;
-
-    @Autowired
     UserRepository userRepository;
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
@@ -79,44 +76,6 @@ public class AdminController {
             return ResponseEntity.ok(userRepository.findByUsername(username));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-    }
-
-
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @PostMapping("/send-email")
-    public ResponseEntity<?> sendAdminEmail(@RequestBody AdminEmailObject aem) {
-        emailService.sendAdminEmail(aem.getTo(), aem.getFrom(), aem.getSubject(), aem.getBody());
-        return ResponseEntity.ok().body(new MessageResponse("Email sent.")) ;
-    }
-
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @GetMapping("/emails/{username}")
-    public ResponseEntity<?> getMail(@PathVariable("username") String username) {
-        List<AdminEmailObject> emails = emailService.getUserEmails(username);
-        if (emails.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("No emails found."));
-        }
-        return ResponseEntity.ok(emails);
-    }
-
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @PostMapping("/emails/delete")
-    public ResponseEntity<?> deleteMail(@RequestBody AdminEmailObject[] emails) {
-        if (emails.length == 0) return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Selection is Empty!");
-        if (emailService.deleteEmails(emails)) return ResponseEntity.ok(new MessageResponse("Email deleted successfully!"));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Email could not be deleted!"));
-    }
-
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @GetMapping("/get-all-emails/accountant")
-    public ResponseEntity<?> getAllAccountantEmails() {
-        return adminService.getAllAccountantEmails();
-    }
-
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @GetMapping("/get-all-emails/manager")
-    public ResponseEntity<?> getAllManagerEmails() {
-        return adminService.getAllManagerEmails();
     }
 
 }

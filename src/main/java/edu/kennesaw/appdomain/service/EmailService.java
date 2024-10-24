@@ -6,10 +6,12 @@ import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.entity.UserDate;
 import edu.kennesaw.appdomain.repository.UserDateRepository;
 import edu.kennesaw.appdomain.repository.UserRepository;
+import edu.kennesaw.appdomain.types.UserType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -201,6 +203,26 @@ public class EmailService {
         mailSender.send(mm);
     }
 
+    public void sendBasicNoReplyEmail(String to, String subject, String body) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper mmh = new MimeMessageHelper(mm, true, "UTF-8");
+            mmh.setTo(to);
+            mmh.setFrom("noreply@synergyaccounting.app");
+            mmh.setSubject(subject);
+            mmh.setText(body, false);
+            mm.setHeader("Message-ID", "<" + System.currentTimeMillis() + "@synergyaccounting.app>");
+            mm.setHeader("X-Mailer", "JavaMailer");
+            mm.setHeader("Return-Path", "noreply@synergyaccounting.app");
+            mm.setHeader("Reply-To", "support@synergyaccounting.app");
+            mm.setHeader("List-Unsubscribe", "<mailto:unsubscribe@synergyaccounting.app>");
+            mm.setSentDate(new Date());
+            mailSender.send(mm);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void sendAdminEmail(String to, String from, String subject, String body) {
         String emailPassword = userRepository.findByUsername(from).get().getUserSecurity().getEmailPassword();
         JavaMailSender adminMailSender = mailConfig.getAdminMailSender(from.toLowerCase(), emailPassword);
@@ -219,6 +241,31 @@ public class EmailService {
             adminMailSender.send(mm);
         } catch (MessagingException e) {
             System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+
+    public void sendMassManagerEmail(String subject, String body) {
+        List<User> managers = userRepository.getAllUsersByUserType(UserType.MANAGER);
+        List<User> admins = userRepository.getAllUsersByUserType(UserType.ADMINISTRATOR);
+        managers.addAll(admins);
+        for (User user : managers) {
+            MimeMessage mm = mailSender.createMimeMessage();
+            try {
+                MimeMessageHelper mmh = new MimeMessageHelper(mm, true, "UTF-8");
+                mmh.setTo(user.getUsername() + "@synergyaccounting.app");
+                mmh.setFrom("noreply@synergyaccounting.app");
+                mmh.setSubject(subject);
+                mmh.setText(body, false);
+                mm.setHeader("Message-ID", "<" + System.currentTimeMillis() + "@synergyaccounting.app>");
+                mm.setHeader("X-Mailer", "JavaMailer");
+                mm.setHeader("Return-Path", "noreply@synergyaccounting.app");
+                mm.setHeader("Reply-To", "support@synergyaccounting.app");
+                mm.setHeader("List-Unsubscribe", "<mailto:unsubscribe@synergyaccounting.app>");
+                mm.setSentDate(new Date());
+                mailSender.send(mm);
+            } catch (MessagingException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -329,4 +376,21 @@ public class EmailService {
         }
         return true;
     }
+
+    public ResponseEntity<List<String>> getAllAccountantEmails() {
+        List<String> emails = new ArrayList<>();
+        userRepository.getAllUsersByUserType(UserType.ACCOUNTANT).forEach(user -> {
+            emails.add(user.getUsername() + "@synergyaccounting.app");
+        });
+        return ResponseEntity.ok(emails);
+    }
+
+    public ResponseEntity<List<String>> getAllManagerEmails() {
+        List<String> emails = new ArrayList<>();
+        userRepository.getAllUsersByUserType(UserType.MANAGER).forEach(user -> {
+            emails.add(user.getUsername() + "@synergyaccounting.app");
+        });
+        return ResponseEntity.ok(emails);
+    }
+
 }

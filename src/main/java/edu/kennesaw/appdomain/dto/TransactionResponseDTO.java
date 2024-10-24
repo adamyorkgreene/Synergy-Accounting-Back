@@ -10,7 +10,7 @@ public class TransactionResponseDTO {
     private String transactionDescription;
     private Double transactionAmount;
     private AccountType transactionType;
-    private Account transactionAccount;
+    private Account account;
 
     public TransactionResponseDTO(Long transactionId, String transactionDate, String transactionDescription, Double transactionAmount, AccountType transactionType) {
         this.transactionId = transactionId;
@@ -60,12 +60,12 @@ public class TransactionResponseDTO {
         return transactionType;
     }
 
-    public void setAccount(Account transactionAccount) {
-        this.transactionAccount = transactionAccount;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public Account getAccount() {
-        return transactionAccount;
+        return account;
     }
 
 }

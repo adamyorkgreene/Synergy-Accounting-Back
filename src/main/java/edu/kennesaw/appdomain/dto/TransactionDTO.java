@@ -7,26 +7,27 @@ import java.util.Date;
 
 public class TransactionDTO {
 
-    private Long accountNumber;
+    private Account account;
     private String transactionDescription;
     private Double transactionAmount;
     private AccountType transactionType;
     private Long transactionId;
+    private Date transactionDate;
 
-    public TransactionDTO(Long accountNumber, String transactionDescription, Double transactionAmount, AccountType
+    public TransactionDTO(Account account, String transactionDescription, Double transactionAmount, AccountType
             transactionType) {
-        this.accountNumber = accountNumber;
+        this.account = account;
         this.transactionDescription = transactionDescription;
         this.transactionAmount = transactionAmount;
         this.transactionType = transactionType;
     }
 
-    public void setAccount(Long accountNumber) {
-        this.accountNumber = accountNumber;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
-    public Long getAccount() {
-        return accountNumber;
+    public Account getAccount() {
+        return account;
     }
 
     public String getTransactionDescription() {
@@ -59,5 +60,13 @@ public class TransactionDTO {
 
     public void setTransactionId(Long transactionId) {
         this.transactionId = transactionId;
+    }
+
+    public Date getTransactionDate() {
+        return transactionDate;
+    }
+
+    public void setTransactionDate(Date transactionDate) {
+        this.transactionDate = transactionDate;
     }
 }

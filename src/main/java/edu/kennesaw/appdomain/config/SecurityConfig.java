@@ -35,12 +35,23 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/users/login", "/", "/login", "/register", "/api/users/register", "/verify", "/password-reset", "/confirm-user",
                                         "/api/users/verify", "/api/users/verify-request", "/api/users/password-reset", "/api/users/request-password-reset",
-                                        "/api/users/request-confirm-user", "/api/users/confirm-user", "/api/csrf").permitAll()
+                                        "/api/users/request-confirm-user", "/api/users/confirm-user", "/api/csrf", "/api/accounts/approve-journal-entry", "/approve-journal-entry").permitAll()
                         .requestMatchers("/dashboard", "/api/users/dashboard","/api/users/validate", "/upload-image", "/api/dashboard/**").authenticated()
                                 .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
                                 .requestMatchers("/api/manager/**").hasAnyRole("ADMINISTRATOR", "MANAGER")
+                                .requestMatchers("/api/email/**").hasAnyRole("ADMINISTRATOR", "MANAGER", "ACCOUNTANT")
                                 .requestMatchers("/api/dashboard/**").hasAnyRole("USER", "ACCOUNTANT", "ADMINISTRATOR", "MANAGER")
-                        .anyRequest().authenticated())
+                                .requestMatchers("/api/chart-of-accounts").hasAnyRole("ADMINISTRATOR", "MANAGER", "ACCOUNTANT")
+                                .requestMatchers("/api/chart-of-accounts/{accountNumber}").hasAnyRole("ADMINISTRATOR", "MANAGER", "ACCOUNTANT")
+                                .requestMatchers("/api/chart-of-accounts/add-account").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/api/chart-of-accounts/add-transaction").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/api/chart-of-accounts/add-journal-entry").hasAnyRole("ADMINISTRATOR", "MANAGER")
+                                .requestMatchers("/api/chart-of-accounts/request-journal-entry").hasAnyRole("ACCOUNTANT", "ADMINISTRATOR", "MANAGER")
+                                .requestMatchers("/api/chart-of-accounts/update-transaction").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/api/chart-of-accounts/update-account").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/api/chart-of-accounts/delete-transaction").hasRole("ADMINISTRATOR")
+                                .requestMatchers("/api/chart-of-accounts/update-activation").hasRole("ADMINISTRATOR")
+                                .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation().migrateSession())
                 .logout(logout -> logout

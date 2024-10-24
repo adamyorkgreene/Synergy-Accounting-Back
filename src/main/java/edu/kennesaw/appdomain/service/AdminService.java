@@ -78,7 +78,7 @@ public class AdminService {
 
         userService.sendResetPasswordEmail(user.getEmail());
 
-        if (createdUser.getUserType().equals(UserType.ADMINISTRATOR)) {
+        if (!createdUser.getUserType().equals(UserType.DEFAULT) && !createdUser.getUserType().equals(UserType.USER)) {
             scriptService.createMailbox(createdUser);
         }
 
@@ -102,12 +102,14 @@ public class AdminService {
         String oldUsername = existingUser.getUsername();
 
         if (userDetails.getUserType().isPresent()) {
-            if (!existingUser.getUserType().equals(UserType.ADMINISTRATOR)) {
-                if (userDetails.getUserType().get().equals(UserType.ADMINISTRATOR)) {
+            UserType existingUserType = existingUser.getUserType();
+            UserType newUserType = userDetails.getUserType().get();
+            if (existingUserType.equals(UserType.DEFAULT) || existingUserType.equals(UserType.USER)) {
+                if (!newUserType.equals(UserType.DEFAULT) && !newUserType.equals(UserType.USER)) {
                     scriptService.createMailbox(existingUser);
                 }
             } else {
-                if (!userDetails.getUserType().get().equals(UserType.ADMINISTRATOR)) {
+                if (newUserType.equals(UserType.DEFAULT) || newUserType.equals(UserType.USER)) {
                     scriptService.deleteMailbox(existingUser);
                 }
             }
@@ -152,22 +154,6 @@ public class AdminService {
         user.getUserSecurity().setIsActive(status);
         userRepository.save(user);
         return ResponseEntity.ok(new MessageResponse("User: "+ (status ? "activated" : "deactivated") + "successfully"));
-    }
-
-    public ResponseEntity<List<String>> getAllAccountantEmails() {
-        List<String> emails = new ArrayList<>();
-        userRepository.getAllUsersByUserType(UserType.ACCOUNTANT).forEach(user -> {
-            emails.add(user.getEmail());
-        });
-        return ResponseEntity.ok(emails);
-    }
-
-    public ResponseEntity<List<String>> getAllManagerEmails() {
-        List<String> emails = new ArrayList<>();
-        userRepository.getAllUsersByUserType(UserType.MANAGER).forEach(user -> {
-            emails.add(user.getEmail());
-        });
-        return ResponseEntity.ok(emails);
     }
 
 }
