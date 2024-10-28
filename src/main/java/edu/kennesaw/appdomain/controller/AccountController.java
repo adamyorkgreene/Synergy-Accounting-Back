@@ -3,6 +3,7 @@ package edu.kennesaw.appdomain.controller;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.*;
 import edu.kennesaw.appdomain.repository.AccountRepository;
+import edu.kennesaw.appdomain.repository.JournalEntryRepository;
 import edu.kennesaw.appdomain.repository.TransactionRequestRepository;
 import edu.kennesaw.appdomain.service.AccountService;
 import edu.kennesaw.appdomain.service.EmailService;
@@ -28,6 +29,8 @@ public class AccountController {
     private EmailService emailService;
     @Autowired
     private TransactionRequestRepository transactionRequestRepository;
+    @Autowired
+    private JournalEntryRepository journalEntryRepository;
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
     @GetMapping("/chart-of-accounts")
@@ -65,18 +68,21 @@ public class AccountController {
     public ResponseEntity<?> addJournalEntry(@RequestBody JournalEntryRequest jer) {
         TransactionDTO[] transactionDTOs = jer.getTransactions();
         User user = jer.getUser();
+        JournalEntry je = new JournalEntry();
+        je.setUser(user);
+        journalEntryRepository.save(je);
         try {
             String token = UUID.randomUUID().toString();
             for (TransactionDTO transactionDTO : transactionDTOs) {
                 TransactionRequest transaction = accountService.addTransactionRequest(transactionDTO.getAccount(),
                         transactionDTO.getTransactionDescription(), transactionDTO.getTransactionAmount(),
-                        transactionDTO.getTransactionType(), token, user);
+                        transactionDTO.getTransactionType(), je.getPr());
                 if (transaction == null) {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("This account is disabled."));
                 }
             }
-            List<TransactionRequest> trs = transactionRequestRepository.findAllByToken(token);
-            accountService.approveJournalEntry(trs);
+            List<TransactionRequest> trs = transactionRequestRepository.findAllByPr(je.getPr());
+            accountService.approveJournalEntry(trs, "");
             return ResponseEntity.ok().body(new MessageResponse("Your journal entry has been added."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("This account cannot be found."));
@@ -88,6 +94,9 @@ public class AccountController {
     public ResponseEntity<?> requestJournalEntry(@RequestBody JournalEntryRequest jer) {
         TransactionDTO[] transactionDTOs = jer.getTransactions();
         User user = jer.getUser();
+        JournalEntry je = new JournalEntry();
+        je.setUser(user);
+        journalEntryRepository.save(je);
         try {
             String token = UUID.randomUUID().toString();
             StringBuilder body = new StringBuilder();
@@ -96,7 +105,7 @@ public class AccountController {
             for (TransactionDTO transactionDTO : transactionDTOs) {
                 TransactionRequest transaction = accountService.addTransactionRequest(transactionDTO.getAccount(),
                         transactionDTO.getTransactionDescription(), transactionDTO.getTransactionAmount(),
-                        transactionDTO.getTransactionType(), token, user);
+                        transactionDTO.getTransactionType(), je.getPr());
                 if (transaction == null) {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("This account is disabled."));
                 }
@@ -119,24 +128,30 @@ public class AccountController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
+    @GetMapping("/general-ledger")
+    public ResponseEntity<?> getGeneralLedger() {
+        return ResponseEntity.ok(accountService.getJournalEntryRequests(true));
+    }
+
     @GetMapping("/approve-journal-entry")
-    public ResponseEntity<?> approveJournalEntry(@RequestParam("token") String token) {
-        List<TransactionRequest> trs = transactionRequestRepository.findAllByToken(token);
+    public ResponseEntity<?> approveJournalEntry(@RequestParam("token") Long pr) {
+        List<TransactionRequest> trs = transactionRequestRepository.findAllByPr(pr);
         if (trs == null || trs.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Transaction" +
                     " Request Token\nThis transaction has already been responded to, or the link is incorrect."));
         }
-        return accountService.approveJournalEntry(trs);
+        return accountService.approveJournalEntry(trs, "");
     }
 
     @GetMapping("/reject-journal-entry")
-    public ResponseEntity<?> rejectJournalEntry(@RequestParam("token") String token) {
-        List<TransactionRequest> trs = transactionRequestRepository.findAllByToken(token);
+    public ResponseEntity<?> rejectJournalEntry(@RequestParam("token") Long pr) {
+        List<TransactionRequest> trs = transactionRequestRepository.findAllByPr(pr);
         if (trs == null || trs.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Transaction" +
                     " Request Token\nThis transaction has already been responded to, or the link is incorrect."));
         }
-        return accountService.rejectJournalEntry(trs);
+        return accountService.rejectJournalEntry(trs, "");
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
@@ -164,6 +179,12 @@ public class AccountController {
     @GetMapping("/chart-of-accounts/{accountNumber}")
     public ResponseEntity<List<TransactionResponseDTO>> getTransactionsByAccount(@PathVariable Long accountNumber) {
         return ResponseEntity.ok(accountService.getTransactionsByAccountNumber(accountNumber));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER')")
+    @GetMapping("/journal-entry/{pr}")
+    public ResponseEntity<?> journalEntryByToken(@PathVariable Long pr) {
+        return ResponseEntity.ok(accountService.getJournalEntry(pr));
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")

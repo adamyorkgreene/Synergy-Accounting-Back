@@ -31,11 +31,7 @@ public class TransactionRequest {
     private AccountType transactionType;
 
     @Column(nullable = false)
-    private String token;
-
-    @ManyToOne(targetEntity = User.class, fetch = FetchType.EAGER)
-    @JoinColumn(name = "userid", nullable = false)
-    private User user;
+    private Long pr;
 
     @Column()
     private Boolean isApproved = null;
@@ -88,20 +84,12 @@ public class TransactionRequest {
         this.transactionType = transactionType;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public Long getPr() {
+        return pr;
     }
 
-    public String getToken() {
-        return token;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public User getUser() {
-        return user;
+    public void setPr(Long pr) {
+        this.pr = pr;
     }
 
     public void setApproved(Boolean isApproved) {

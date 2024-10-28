@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.controller;
 
+import edu.kennesaw.appdomain.dto.JournalEntryRequestDTO;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.entity.TransactionRequest;
 import edu.kennesaw.appdomain.repository.TransactionRequestRepository;
@@ -24,7 +25,7 @@ public class ManagerController {
     @Autowired
     private TransactionRequestRepository transactionRequestRepository;
 
-    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
     @GetMapping("/journal-entry-requests/approved")
     public ResponseEntity<?> requestApprovedJournalEntries() {
         return ResponseEntity.ok(accountService.getJournalEntryRequests(true));
@@ -43,9 +44,9 @@ public class ManagerController {
     }
 
     @PostMapping("/approve-journal-entry")
-    public ResponseEntity<?> approveJournalEntryByIds(@RequestBody Long[] ids) {
+    public ResponseEntity<?> approveJournalEntryByIds(@RequestBody JournalEntryRequestDTO jerDTO) {
         List<TransactionRequest> trs = new ArrayList<>();
-        for (Long id : ids) {
+        for (Long id : jerDTO.getIds()) {
             TransactionRequest tr = transactionRequestRepository.findByTransactionId(id);
             if (tr != null) {
                 trs.add(tr);
@@ -54,13 +55,13 @@ public class ManagerController {
         if (trs.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("These transactions cannot be found."));
         }
-        return accountService.approveJournalEntry(trs);
+        return accountService.approveJournalEntry(trs, jerDTO.getComments());
     }
 
     @PostMapping("/reject-journal-entry")
-    public ResponseEntity<?> rejectJournalEntryByIds(@RequestBody Long[] ids) {
+    public ResponseEntity<?> rejectJournalEntryByIds(@RequestBody JournalEntryRequestDTO jerDTO) {
         List<TransactionRequest> trs = new ArrayList<>();
-        for (Long id : ids) {
+        for (Long id : jerDTO.getIds()) {
             TransactionRequest tr = transactionRequestRepository.findByTransactionId(id);
             if (tr != null) {
                 trs.add(tr);
@@ -69,7 +70,7 @@ public class ManagerController {
         if (trs.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("These transactions cannot be found."));
         }
-        return accountService.rejectJournalEntry(trs);
+        return accountService.rejectJournalEntry(trs, jerDTO.getComments());
     }
 
 }

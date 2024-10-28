@@ -4,6 +4,7 @@ import edu.kennesaw.appdomain.entity.Account;
 import edu.kennesaw.appdomain.types.AccountType;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class TransactionDTO {
 
@@ -13,6 +14,7 @@ public class TransactionDTO {
     private AccountType transactionType;
     private Long transactionId;
     private Date transactionDate;
+    private Long pr;
 
     public TransactionDTO(Account account, String transactionDescription, Double transactionAmount, AccountType
             transactionType) {
@@ -68,5 +70,13 @@ public class TransactionDTO {
 
     public void setTransactionDate(Date transactionDate) {
         this.transactionDate = transactionDate;
+    }
+
+    public Long getPr() {
+        return pr;
+    }
+
+    public void setPr(Long pr) {
+        this.pr = pr;
     }
 }

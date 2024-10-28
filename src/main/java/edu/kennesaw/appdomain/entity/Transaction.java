@@ -10,7 +10,6 @@ import java.util.Date;
 public class Transaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transactionId;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -29,6 +28,9 @@ public class Transaction {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountType transactionType;
+
+    @Column(nullable = false)
+    private Long pr;
 
     public Long getTransactionId() {
         return transactionId;
@@ -76,6 +78,14 @@ public class Transaction {
 
     public void setTransactionType(AccountType transactionType) {
         this.transactionType = transactionType;
+    }
+
+    public Long getPr() {
+        return pr;
+    }
+
+    public void setPr(Long pr) {
+        this.pr = pr;
     }
 
 }

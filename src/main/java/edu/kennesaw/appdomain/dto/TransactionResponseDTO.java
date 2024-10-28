@@ -11,13 +11,15 @@ public class TransactionResponseDTO {
     private Double transactionAmount;
     private AccountType transactionType;
     private Account account;
+    private Long pr;
 
-    public TransactionResponseDTO(Long transactionId, String transactionDate, String transactionDescription, Double transactionAmount, AccountType transactionType) {
+    public TransactionResponseDTO(Long transactionId, String transactionDate, String transactionDescription, Double transactionAmount, AccountType transactionType, Long pr) {
         this.transactionId = transactionId;
         this.transactionDate = transactionDate;
         this.transactionDescription = transactionDescription;
         this.transactionAmount = transactionAmount;
         this.transactionType = transactionType;
+        this.pr = pr;
     }
 
     public void setTransactionId(Long transactionId) {
@@ -66,6 +68,14 @@ public class TransactionResponseDTO {
 
     public Account getAccount() {
         return account;
+    }
+
+    public Long getPr() {
+        return pr;
+    }
+
+    public void setPr(Long pr) {
+        this.pr = pr;
     }
 
 }

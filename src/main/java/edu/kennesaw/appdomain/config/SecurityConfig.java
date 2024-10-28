@@ -47,6 +47,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/chart-of-accounts/add-transaction").hasRole("ADMINISTRATOR")
                                 .requestMatchers("/api/chart-of-accounts/add-journal-entry").hasAnyRole("ADMINISTRATOR", "MANAGER")
                                 .requestMatchers("/api/chart-of-accounts/request-journal-entry").hasAnyRole("ACCOUNTANT", "ADMINISTRATOR", "MANAGER")
+                                .requestMatchers("/dashboard/general-ledger").hasAnyRole("ACCOUNTANT", "ADMINISTRATOR", "MANAGER")
                                 .requestMatchers("/api/chart-of-accounts/update-transaction").hasRole("ADMINISTRATOR")
                                 .requestMatchers("/api/chart-of-accounts/update-account").hasRole("ADMINISTRATOR")
                                 .requestMatchers("/api/chart-of-accounts/delete-transaction").hasRole("ADMINISTRATOR")

@@ -1,14 +1,8 @@
 package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.dto.*;
-import edu.kennesaw.appdomain.entity.Account;
-import edu.kennesaw.appdomain.entity.Transaction;
-import edu.kennesaw.appdomain.entity.TransactionRequest;
-import edu.kennesaw.appdomain.entity.User;
-import edu.kennesaw.appdomain.repository.AccountRepository;
-import edu.kennesaw.appdomain.repository.TransactionRepository;
-import edu.kennesaw.appdomain.repository.TransactionRequestRepository;
-import edu.kennesaw.appdomain.repository.UserRepository;
+import edu.kennesaw.appdomain.entity.*;
+import edu.kennesaw.appdomain.repository.*;
 import edu.kennesaw.appdomain.service.utils.AccountNumberGenerator;
 import edu.kennesaw.appdomain.types.AccountCategory;
 import edu.kennesaw.appdomain.types.AccountSubCategory;
@@ -43,6 +37,9 @@ public class AccountService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private JournalEntryRepository journalEntryRepository;
+
     public List<AccountResponseDTO> getChartOfAccounts() {
         List<Account> accounts = accountRepository.findAll(Sort.by(Sort.Direction.ASC, "accountNumber"));
         return accounts.stream()
@@ -75,7 +72,8 @@ public class AccountService {
                         new SimpleDateFormat("yyyy-MM-dd").format(transaction.getTransactionDate()),
                         transaction.getDescription(),
                         transaction.getAmount(),
-                        transaction.getTransactionType()
+                        transaction.getTransactionType(),
+                        transaction.getPr()
                 ))
                 .collect(Collectors.toList());
     }
@@ -141,7 +139,7 @@ public class AccountService {
 
     @Transactional
     public TransactionRequest addTransactionRequest(Account account, String transactionDescription, Double transactionAmount,
-                                      AccountType transactionType, String token, User user) {
+                                      AccountType transactionType, Long pr) {
 
         if (!account.getIsActive()) {
             return null;
@@ -153,47 +151,124 @@ public class AccountService {
         transaction.setAmount(transactionAmount);
         transaction.setTransactionType(transactionType);
         transaction.setTransactionDate(new Date());
-        transaction.setToken(token);
+        transaction.setPr(pr);
         transaction.setApproved(null);
-        transaction.setUser(user);
 
         return transactionRequestRepository.save(transaction);
 
     }
 
     @Transactional
-    public ResponseEntity<?> approveJournalEntry(List<TransactionRequest> trs) {
+    public ResponseEntity<?> approveJournalEntry(List<TransactionRequest> trs, String comments) {
         for (TransactionRequest tr : trs) {
             Transaction transaction = new Transaction();
-            transaction.setAccount(tr.getAccount());
+            Account account = tr.getAccount();
+            account = accountRepository.findById(account.getAccountNumber())
+                    .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+            Double amount = tr.getAmount();
+            if (tr.getTransactionType().equals(AccountType.DEBIT)) {
+                account.setDebitBalance(account.getDebitBalance() + amount);
+            } else if (tr.getTransactionType().equals(AccountType.CREDIT)) {
+                account.setCreditBalance(account.getCreditBalance() + amount);
+            }
+            accountRepository.save(account);
+            transaction.setTransactionId(tr.getTransactionId());
+            transaction.setAccount(account);
             transaction.setTransactionType(tr.getTransactionType());
             transaction.setTransactionDate(tr.getTransactionDate());
             transaction.setAmount(tr.getAmount());
             transaction.setDescription(tr.getDescription());
+            transaction.setPr(tr.getPr());
             tr.setApproved(true);
             transactionRepository.save(transaction);
             transactionRequestRepository.save(tr);
         }
-        User user = trs.get(0).getUser();
+        JournalEntry je = journalEntryRepository.findByPr(trs.get(0).getPr());
+        je.setComments(comments);
+        je.setApproved(true);
+        journalEntryRepository.save(je);
+        User user = je.getUser();
         emailService.sendBasicNoReplyEmail(user.getUsername() + "@synergyaccounting.app",
                 "Your journal entry has been approved!",
                 user.getFirstName() + ", \n\nYour journal entry has been approved and is now reflected" +
-                        " within the chart of accounts.");
+                        " within the chart of accounts." + (comments.isEmpty() ? "" : "\n\nComments: " + comments));
         return ResponseEntity.ok().body(new MessageResponse("This journal entry has been approved."));
     }
 
     @Transactional
-    public ResponseEntity<?> rejectJournalEntry(List<TransactionRequest> trs) {
+    public ResponseEntity<?> rejectJournalEntry(List<TransactionRequest> trs, String comments) {
         for (TransactionRequest tr : trs) {
             tr.setApproved(false);
             transactionRequestRepository.save(tr);
         }
+        JournalEntry je = journalEntryRepository.findByPr(trs.get(0).getPr());
+        je.setComments(comments);
+        je.setApproved(false);
+        journalEntryRepository.save(je);
+        User user = je.getUser();
+        emailService.sendBasicNoReplyEmail(user.getUsername() + "@synergyaccounting.app",
+                "Journal Entry Response",
+                user.getFirstName() + ", \n\nYour journal entry has been rejected for the following reason:\n" + comments);
         return ResponseEntity.ok().body(new MessageResponse("This journal entry has been rejected."));
     }
 
-    public List<JournalEntryRequest> getJournalEntryRequests(Boolean isApproved) {
+    public JournalEntryRequest getJournalEntry(Long pr) {
+        List<TransactionRequest> trs = transactionRequestRepository
+                .findAllByIsApprovedAndPr(true, pr);
+        if (trs == null || trs.isEmpty()) {
+            return null;
+        }
+        JournalEntryRequest jer = new JournalEntryRequest();
+        User currentUser = journalEntryRepository.findByPr(pr).getUser();
+        List<TransactionDTO> currentTransactions = new ArrayList<>();
+        trs.forEach(tr -> {
+            TransactionDTO transactionDTO = new TransactionDTO(
+                    tr.getAccount(),
+                    tr.getDescription(),
+                    tr.getAmount(),
+                    tr.getTransactionType()
+            );
+            transactionDTO.setPr(tr.getPr());
+            transactionDTO.setTransactionId(tr.getTransactionId());
+            transactionDTO.setTransactionDate(tr.getTransactionDate());
+            currentTransactions.add(transactionDTO);
+        });
+        jer.setTransactions(currentTransactions.toArray(new TransactionDTO[0]));
+        jer.setUser(currentUser);
+        return jer;
+    }
 
-        List<TransactionRequest> trs = transactionRequestRepository.findAllByIsApprovedOrderByToken(isApproved);
+    public List<JournalEntryRequest> getJournalEntryRequests(Boolean isApproved) {
+        List<JournalEntryRequest> jers = new ArrayList<>();
+        List<JournalEntry> jentries = journalEntryRepository.findAllByIsApproved(isApproved);
+        for (JournalEntry je : jentries) {
+            JournalEntryRequest jer = new JournalEntryRequest();
+            List<TransactionDTO> tdtos = new ArrayList<>();
+            for (TransactionRequest tr : transactionRequestRepository.findAllByPr(je.getPr())) {
+                TransactionDTO transactionDTO = new TransactionDTO(
+                        tr.getAccount(),
+                        tr.getDescription(),
+                        tr.getAmount(),
+                        tr.getTransactionType()
+                );
+                transactionDTO.setPr(tr.getPr());
+                transactionDTO.setTransactionId(tr.getTransactionId());
+                transactionDTO.setTransactionDate(tr.getTransactionDate());
+                tdtos.add(transactionDTO);
+            }
+            jer.setTransactions(tdtos.toArray(new TransactionDTO[0]));
+            jer.setApproved(null);
+            jer.setUser(je.getUser());
+            jer.setComments(je.getComments());
+            jers.add(jer);
+        }
+        return jers;
+    }
+
+    @Deprecated
+    public List<JournalEntryRequest> getJournalEntryRequestsOld(Boolean isApproved) {
+
+        List<TransactionRequest> trs = transactionRequestRepository.findAllByIsApprovedOrderByPr(isApproved);
         List<JournalEntryRequest> jers = new ArrayList<>();
         if (trs == null || trs.isEmpty()) {
             return jers;
@@ -202,21 +277,28 @@ public class AccountService {
         JournalEntryRequest currentJournalEntry = new JournalEntryRequest();
         List<TransactionDTO> currentTransactions = new ArrayList<>();
 
-        String currentToken = trs.get(0).getToken();
-        User currentUser = trs.get(0).getUser();
+        Long currentToken = trs.get(0).getPr();
+        User currentUser = journalEntryRepository.findByPr(currentToken).getUser();
 
         for (TransactionRequest tr : trs) {
 
-            if (!tr.getToken().equals(currentToken)) {
+            if (!tr.getPr().equals(currentToken)) {
 
                 currentJournalEntry.setTransactions(currentTransactions.toArray(new TransactionDTO[0]));
                 currentJournalEntry.setUser(currentUser);
+                JournalEntry je = journalEntryRepository.findByPr(currentToken);
+                if (je != null) {
+                    System.out.println("\n\n\n[COMMENTS-DEBUG] Token: " + currentToken + ", Comments: " + je.getComments());
+                    currentJournalEntry.setComments(je.getComments());
+                } else {
+                    System.out.println("\n\n\n[COMMENTS-DEBUG] No JournalEntry found for token: " + currentToken);
+                }
                 jers.add(currentJournalEntry);
 
                 currentJournalEntry = new JournalEntryRequest();
                 currentTransactions = new ArrayList<>();
-                currentToken = tr.getToken();
-                currentUser = tr.getUser();
+                currentToken = tr.getPr();
+                currentUser = journalEntryRepository.findByPr(currentToken).getUser();journalEntryRepository.findByPr(currentToken).getUser();
             }
 
             TransactionDTO transactionDTO = new TransactionDTO(
@@ -225,6 +307,7 @@ public class AccountService {
                     tr.getAmount(),
                     tr.getTransactionType()
             );
+            transactionDTO.setPr(tr.getPr());
             transactionDTO.setTransactionId(tr.getTransactionId());
             transactionDTO.setTransactionDate(tr.getTransactionDate());
             currentTransactions.add(transactionDTO);
@@ -233,6 +316,12 @@ public class AccountService {
         currentJournalEntry.setTransactions(currentTransactions.toArray(new TransactionDTO[0]));
         currentJournalEntry.setUser(currentUser);
         jers.add(currentJournalEntry);
+
+        System.out.println("[COMMENTS-DEBUG] Final JournalEntryRequest list:");
+        for (JournalEntryRequest jer : jers) {
+            System.out.println("Token: " + (jer.getTransactions().length > 0 ? jer.getTransactions()[0].getPr() : "No Token") +
+                    ", Comments: " + jer.getComments());
+        }
 
         return jers;
     }
@@ -291,6 +380,7 @@ public class AccountService {
                     account.setCreditBalance(account.getCreditBalance() - transaction.getAmount());
                 }
                 accountRepository.save(account);
+                transactionRequestRepository.deleteByTransactionId(transaction.getTransactionId());
                 transactionRepository.delete(transaction);
             } else {
                 return false;

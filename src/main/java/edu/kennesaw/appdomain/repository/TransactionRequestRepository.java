@@ -7,7 +7,9 @@ import java.util.List;
 
 public interface TransactionRequestRepository extends JpaRepository<TransactionRequest, Long> {
     List<TransactionRequest> findByAccountAccountNumber(Long accountNumber);
-    List<TransactionRequest> findAllByToken(String token);
-    List<TransactionRequest> findAllByIsApprovedOrderByToken(Boolean approved);
+    List<TransactionRequest> findAllByPr(Long pr);
+    List<TransactionRequest> findAllByIsApprovedOrderByPr(Boolean approved);
+    List<TransactionRequest> findAllByIsApprovedAndPr(Boolean approved, Long pr);
     TransactionRequest findByTransactionId(long id);
+    void deleteByTransactionId(long id);
 }
