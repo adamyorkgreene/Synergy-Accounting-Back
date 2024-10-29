@@ -3,20 +3,32 @@ package edu.kennesaw.appdomain.controller;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.*;
 import edu.kennesaw.appdomain.repository.AccountRepository;
+import edu.kennesaw.appdomain.repository.AttachmentRepository;
 import edu.kennesaw.appdomain.repository.JournalEntryRepository;
 import edu.kennesaw.appdomain.repository.TransactionRequestRepository;
 import edu.kennesaw.appdomain.service.AccountService;
 import edu.kennesaw.appdomain.service.EmailService;
 import edu.kennesaw.appdomain.types.UserType;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "https://synergyaccounting.app", allowCredentials = "true")
 @RestController
@@ -31,6 +43,8 @@ public class AccountController {
     private TransactionRequestRepository transactionRequestRepository;
     @Autowired
     private JournalEntryRepository journalEntryRepository;
+    @Autowired
+    private AttachmentRepository attachmentRepository;
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
     @GetMapping("/chart-of-accounts")
@@ -72,7 +86,6 @@ public class AccountController {
         je.setUser(user);
         journalEntryRepository.save(je);
         try {
-            String token = UUID.randomUUID().toString();
             for (TransactionDTO transactionDTO : transactionDTOs) {
                 TransactionRequest transaction = accountService.addTransactionRequest(transactionDTO.getAccount(),
                         transactionDTO.getTransactionDescription(), transactionDTO.getTransactionAmount(),
@@ -83,7 +96,11 @@ public class AccountController {
             }
             List<TransactionRequest> trs = transactionRequestRepository.findAllByPr(je.getPr());
             accountService.approveJournalEntry(trs, "");
-            return ResponseEntity.ok().body(new MessageResponse("Your journal entry has been added."));
+            MessageResponse msgResponse = new MessageResponse("Your journal entry has been added.");
+            JournalEntryResponseDTO jerDTO = new JournalEntryResponseDTO();
+            jerDTO.setMessageResponse(msgResponse);
+            jerDTO.setId(je.getPr());
+            return ResponseEntity.ok().body(jerDTO);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("This account cannot be found."));
         }
@@ -120,8 +137,12 @@ public class AccountController {
             body.append("You may approve this journal entry directly from this email using this link:").append("\n");
             body.append("https://synergyaccounting.app/approve-journal-entry?token=").append(token);
             emailService.sendMassManagerEmail("Journal Entry Request: " + user.getUsername(), body.toString());
-            return ResponseEntity.ok().body(new MessageResponse("Your journal entry has been added and will be visible once approved" +
-                    " by a manager."));
+            MessageResponse msgResponse = new MessageResponse("Your journal entry has been added and will be visible once approved" +
+                    " by a manager.");
+            JournalEntryResponseDTO jerDTO = new JournalEntryResponseDTO();
+            jerDTO.setMessageResponse(msgResponse);
+            jerDTO.setId(je.getPr());
+            return ResponseEntity.ok().body(jerDTO);
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("This account cannot be found."));
@@ -199,6 +220,74 @@ public class AccountController {
     @PostMapping("/chart-of-accounts/update-activation")
     public ResponseEntity<?> deactivateAccounts(@RequestBody AccountResponseDTO account) {
         return accountService.deactivateAccount(account);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
+    @PostMapping("/upload-attachments")
+    public ResponseEntity<String> uploadAttachments(
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam("journalEntryId") Long journalEntryId,
+            HttpServletRequest request) {
+        if (files.isEmpty()) {
+            return new ResponseEntity<>("No files selected", HttpStatus.BAD_REQUEST);
+        }
+        String uploadDir = "/home/sweappdomain/demobackend/je_attachments/" + journalEntryId + "/";
+        File directory = new File(uploadDir);
+        if (!directory.exists() && !directory.mkdirs()) {
+            return new ResponseEntity<>("Could not create upload directory", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        List<String> uploadedFileNames = new ArrayList<>();
+        for (MultipartFile file : files) {
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename != null) {
+                File destinationFile = new File(uploadDir + UUID.randomUUID() + "_" + originalFilename);
+                try {
+                    file.transferTo(destinationFile);
+                    uploadedFileNames.add(destinationFile.getName());
+
+                    Attachment attachment = new Attachment();
+                    attachment.setJournalEntry(journalEntryRepository.findByPr(journalEntryId));
+                    attachment.setFileName(destinationFile.getName());
+                    attachment.setFilePath(destinationFile.getAbsolutePath());
+                    attachmentRepository.save(attachment);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return new ResponseEntity<>("Could not upload the file: " + originalFilename, HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+        }
+        return ResponseEntity.ok("Files uploaded successfully: " + String.join(", ", uploadedFileNames));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
+    @GetMapping("/uploads/{journalEntryId}/{filename:.+}")
+    public ResponseEntity<?> serveAttachment(
+            @PathVariable Long journalEntryId,
+            @PathVariable String filename) throws IOException {
+
+        Path filePath = Paths.get("/home/sweappdomain/demobackend/je_attachments/" + journalEntryId + "/").resolve(filename);
+        if (Files.exists(filePath)) {
+            Resource resource = new FileSystemResource(filePath);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, Files.probeContentType(filePath))
+                    .body(resource);
+        } else {
+            return new ResponseEntity<>("File not found", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT')")
+    @GetMapping("/uploads/{journalEntryId}")
+    public ResponseEntity<List<String>> getAttachmentsForJournalEntry(@PathVariable Long journalEntryId) {
+        List<Attachment> attachments = attachmentRepository.findAllByJe(journalEntryRepository.findByPr(journalEntryId));
+        if (attachments.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        List<String> attachmentFileNames = attachments.stream()
+                .map(Attachment::getFileName)
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(attachmentFileNames, HttpStatus.OK);
     }
 
 }

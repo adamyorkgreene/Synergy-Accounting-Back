@@ -260,6 +260,7 @@ public class AccountService {
             jer.setApproved(null);
             jer.setUser(je.getUser());
             jer.setComments(je.getComments());
+            jer.setPr(je.getPr());
             jers.add(jer);
         }
         return jers;

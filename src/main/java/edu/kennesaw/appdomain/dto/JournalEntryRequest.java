@@ -8,6 +8,7 @@ public class JournalEntryRequest {
     private User user;
     private String comments;
     private Boolean isApproved;
+    private Long pr;
 
     public void setTransactions(TransactionDTO[] transactions) {
         this.transactions = transactions;
@@ -39,6 +40,14 @@ public class JournalEntryRequest {
 
     public void setApproved(Boolean isApproved) {
         this.isApproved = isApproved;
+    }
+
+    public Long getPr() {
+        return pr;
+    }
+
+    public void setPr(Long pr) {
+        this.pr = pr;
     }
 
 }
