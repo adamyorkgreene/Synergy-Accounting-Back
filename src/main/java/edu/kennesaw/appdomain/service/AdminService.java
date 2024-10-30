@@ -2,19 +2,21 @@ package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.entity.UserDate;
 import edu.kennesaw.appdomain.entity.UserSecurity;
+import edu.kennesaw.appdomain.repository.*;
 import edu.kennesaw.appdomain.types.UserType;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.dto.UserDTO;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
-import edu.kennesaw.appdomain.repository.UserRepository;
 import edu.kennesaw.appdomain.service.utils.ServiceUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.token.TokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +27,34 @@ import java.util.*;
 public class AdminService {
 
     @Autowired
-    public UserRepository userRepository;
+    private UserRepository userRepository;
+
+    @Autowired
+    private UserSecurityRepository userSecurityRepository;
+
+    @Autowired
+    private OldPasswordRepository oldPasswordRepository;
+
+    @Autowired
+    private UserDateRepository userDateRepository;
+
+    @Autowired
+    private TokenRepository tokenRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private ConfirmationRepository confirmationRepository;
+
+    @Autowired
+    private EventLogRepository eventLogRepository;
+
+    @Autowired
+    private JournalEntryRepository journalEntryRepository;
+
+    @Autowired
+    private VerificationRepository verificationRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -127,7 +156,6 @@ public class AdminService {
         existingUser.getUserDate().setTempLeaveStart(userDetails.getTempLeaveStart().isEmpty() ? existingUser.getUserDate().getTempLeaveStart() : userDetails.getTempLeaveStart().get());
         existingUser.getUserDate().setTempLeaveEnd(userDetails.getTempLeaveEnd().isEmpty() ? existingUser.getUserDate().getTempLeaveEnd() : userDetails.getTempLeaveEnd().get());
         existingUser.getUserSecurity().setEmailPassword(userDetails.getEmailPassword().isEmpty() ? existingUser.getUserSecurity().getEmailPassword() : userDetails.getEmailPassword().get());
-
         userRepository.save(existingUser);
 
         if (!oldUsername.equals(existingUser.getUsername())) {
@@ -143,6 +171,78 @@ public class AdminService {
 
         return ResponseEntity.ok(existingUser);
 
+    }
+
+    public ResponseEntity<?> deleteUserRequest(Long userid) {
+        if (userRepository.existsById(userid)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    public ResponseEntity<?> deleteUserConfirm(Long userid) throws IOException, InterruptedException {
+
+        if (userRepository.findById(userid).isPresent()) {
+
+            User defaultDeletedUser;
+            Optional<User> defaultDeletedUserOptional = userRepository.findByUsername("deleted_user");
+            if (defaultDeletedUserOptional.isEmpty()) {
+                User defaultDeletedUserNew = new User();
+                defaultDeletedUserNew.setUsername("deleted_user");
+                defaultDeletedUserNew.setEmail("deleted_user@synergyaccounting.app");
+                defaultDeletedUserNew.setFirstName("deleted");
+                defaultDeletedUserNew.setLastName("user");
+                defaultDeletedUserNew.setUserType(UserType.ADMINISTRATOR);
+
+                UserDate userDate = new UserDate();
+                userDate.setBirthday(new Date());
+                userDate.setJoinDate(new Date());
+                userDate.setUser(defaultDeletedUserNew);
+
+                UserSecurity userSecurity = new UserSecurity();
+                String uuid = UUID.randomUUID().toString();
+                userSecurity.setPassword(passwordEncoder.encode(uuid));
+                userSecurity.setIsActive(false);
+                userSecurity.setIsVerified(true);
+                userSecurity.setFailedLoginAttempts(0);
+                userSecurity.setUser(defaultDeletedUserNew);
+
+                defaultDeletedUserNew.setUserSecurity(userSecurity);
+                defaultDeletedUserNew.setUserDate(userDate);
+
+                defaultDeletedUser = userRepository.save(defaultDeletedUserNew);
+
+            } else {
+                defaultDeletedUser = defaultDeletedUserOptional.get();
+            }
+
+            User user = userRepository.findById(userid).get();
+            UserSecurity userSecurity = user.getUserSecurity();
+
+            oldPasswordRepository.deleteAllByUserSecurity(userSecurity);
+            userSecurityRepository.delete(user);
+            userDateRepository.deleteByUser(user);
+
+            verificationRepository.deleteByUser(user);
+            tokenRepository.deleteByUser(user);
+            confirmationRepository.deleteByUser(user);
+
+            accountRepository.updateCreatorByCreator(user, defaultDeletedUser);
+            eventLogRepository.updateUserIdByUserId(user.getUserid(), defaultDeletedUser.getUserid());
+            journalEntryRepository.updateCreatorByCreator(user, defaultDeletedUser);
+
+            File file = new File("/home/sweappdomain/demobackend/uploads/" + user.getUserid() + ".jpg");
+            if (scriptService.mailboxExists(user)) scriptService.deleteMailbox(user);
+            if (file.exists()) file.delete();
+
+            userRepository.delete(user);
+
+            return ResponseEntity.ok(new MessageResponse("Successfully deleted user: " + user.getUsername()));
+
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     public ResponseEntity<?> setActiveStatus(Long id, boolean status) {

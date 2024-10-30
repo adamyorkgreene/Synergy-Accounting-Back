@@ -12,6 +12,7 @@ import java.util.List;
 public interface UserDateRepository extends JpaRepository<UserDate, Long> {
     UserDate findByUser(User user);
     UserDate findById(long id);
+    void deleteByUser(User user);
     List<UserDate> findUserDatesByLastPasswordResetBefore(Date date);
     List<UserDate> findUserDatesByLastPasswordResetAfter(Date date);
     List<UserDate> findUserDatesByLastPasswordResetBetween(Date date1, Date date2);

@@ -12,4 +12,5 @@ import java.util.Set;
 @Repository
 public interface OldPasswordRepository extends JpaRepository<OldPassword, String> {
     List<OldPassword> findByUserSecurityOrderByPasswordChangedAtDesc(UserSecurity userSecurity);
+    void deleteAllByUserSecurity(UserSecurity userSecurity);
 }

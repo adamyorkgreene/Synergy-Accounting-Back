@@ -1,6 +1,9 @@
 package edu.kennesaw.appdomain;
 
+import edu.kennesaw.appdomain.entity.User;
+import edu.kennesaw.appdomain.repository.UserRepository;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -11,6 +14,9 @@ import java.io.PrintStream;
 @SpringBootApplication
 public class FinanceApplication {
 
+    @Autowired
+    private UserRepository userRepository;
+
     public static void main(String[] args) {
 
         Dotenv dotenv = Dotenv.configure().load();
@@ -20,6 +26,7 @@ public class FinanceApplication {
         System.setProperty("MAILPW", dotenv.get("MAILPW"));
 
         SpringApplication.run(FinanceApplication.class, args);
+
     }
 
 }

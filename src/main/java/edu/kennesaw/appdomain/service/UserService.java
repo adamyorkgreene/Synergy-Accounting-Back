@@ -152,6 +152,12 @@ public class UserService {
                         " Please reset your password."));
             }
 
+            if (!authenticatedUser.getUserSecurity().getIsActive()) {
+                return ResponseEntity.status(HttpStatus.LOCKED).body(new MessageResponse("Your account has been" +
+                        " deactivated by an administrator. Please email admin@synergyaccounting.app if you believe" +
+                        " this is an error."));
+            }
+
             authenticatedUser.getUserSecurity().setFailedLoginAttempts(0);
             userRepository.save(authenticatedUser);
 

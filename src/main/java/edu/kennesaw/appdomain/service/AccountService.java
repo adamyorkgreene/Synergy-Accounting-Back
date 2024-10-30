@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.*;
 import edu.kennesaw.appdomain.repository.*;
@@ -39,6 +40,11 @@ public class AccountService {
 
     @Autowired
     private JournalEntryRepository journalEntryRepository;
+
+    @Autowired
+    private EventLogService eventLogService;  // Added EventLogService for logging events
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<AccountResponseDTO> getChartOfAccounts() {
         List<Account> accounts = accountRepository.findAll(Sort.by(Sort.Direction.ASC, "accountNumber"));
@@ -107,7 +113,17 @@ public class AccountService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Creator not found, please try again."));
         }
         account.setCreator(user.get());
-        return ResponseEntity.ok(accountRepository.save(account));
+
+        Account savedAccount = accountRepository.save(account);
+
+        try {
+            String afterState = objectMapper.writeValueAsString(account);
+            eventLogService.logAccountEvent(savedAccount, "CREATE", user.get().getUserid(), null, afterState);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ResponseEntity.ok(savedAccount);
     }
 
     @Transactional
@@ -359,9 +375,23 @@ public class AccountService {
         Optional<Account> accountOptional = accountRepository.findById(accountDTO.getAccountNumber());
         if (accountOptional.isPresent()) {
             Account account = accountOptional.get();
-            account.setAccountName(accountDTO.getAccountName());
-            account.setAccountDescription(accountDTO.getAccountDescription());
-            return accountRepository.save(account);
+            try {
+                String beforeState = objectMapper.writeValueAsString(account);  // Serialize state before update
+
+                // Update account fields
+                account.setAccountName(accountDTO.getAccountName());
+                account.setAccountDescription(accountDTO.getAccountDescription());
+
+                Account updatedAccount = accountRepository.save(account);
+
+                String afterState = objectMapper.writeValueAsString(updatedAccount);
+                eventLogService.logAccountEvent(updatedAccount, "UPDATE", accountOptional.get().getCreator().getUserid(), beforeState, afterState);
+
+                return updatedAccount;
+
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to log event", e);
+            }
         } else {
             throw new IllegalArgumentException("Account not found");
         }

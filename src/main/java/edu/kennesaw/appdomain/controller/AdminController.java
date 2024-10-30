@@ -38,11 +38,23 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/updateuser")
-    public ResponseEntity<?> updateuser(@RequestBody UserDTO user) throws IOException, InterruptedException {
+    public ResponseEntity<?> updateUser(@RequestBody UserDTO user) throws IOException, InterruptedException {
         if (user.getUserid().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("UserID must be valid.");
         }
         return adminService.updateUser(user);
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PostMapping("/delete-user-request")
+    public ResponseEntity<?> deleteUserRequest(@RequestBody Long userId) {
+        return adminService.deleteUserRequest(userId);
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PostMapping("/delete-user-confirm")
+    public ResponseEntity<?> deleteUser(@RequestBody Long userId) throws IOException, InterruptedException {
+        return adminService.deleteUserConfirm(userId);
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
