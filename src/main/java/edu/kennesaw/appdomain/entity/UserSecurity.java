@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
 
@@ -51,17 +53,17 @@ public class UserSecurity {
         this.user = user;
     }
 
-    public boolean setPassword(String password) {
+    public boolean setPassword(String password, PasswordEncoder passwordEncoder) {
         if (this.password != null) {
-            if (this.password.equals(password) || getOldPasswordsToStringList().contains(password)) {
-                return false;
+            if (passwordEncoder.matches(password, this.password) ||
+                    getOldPasswordsToStringList().stream().anyMatch(oldPassword -> passwordEncoder.matches(password, oldPassword))) {                return false;
             } else {
                 addOldPassword(this.password);
-                this.password = password;
+                this.password = passwordEncoder.encode(password);
                 return true;
             }
         } else {
-            this.password = password;
+            this.password = passwordEncoder.encode(password);
             return true;
         }
     }
@@ -74,7 +76,6 @@ public class UserSecurity {
         this.isVerified = isVerified;
     }
 
-    @JsonProperty("is_active")
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
     }

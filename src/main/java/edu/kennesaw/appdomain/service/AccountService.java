@@ -9,11 +9,12 @@ import edu.kennesaw.appdomain.types.AccountCategory;
 import edu.kennesaw.appdomain.types.AccountSubCategory;
 import edu.kennesaw.appdomain.types.AccountType;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -280,6 +281,53 @@ public class AccountService {
             jers.add(jer);
         }
         return jers;
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger(AccountService.class);
+
+    public List<TrialBalanceDTO> getTrialBalance(Date startDate, Date endDate) {
+        logger.info("Fetching trial balance for date range: {} to {}", startDate, endDate);
+
+        Map<String, Double> accountDebits = new HashMap<>();
+        Map<String, Double> accountCredits = new HashMap<>();
+
+        // Fetch approved journal entries within the specified date range
+        List<JournalEntry> entries = journalEntryRepository.findAllByIsApprovedAndDateBetween(true, startDate, endDate);
+
+        if (entries.isEmpty()) {
+            logger.warn("No journal entries found for the specified date range.");
+        } else {
+            logger.info("Found {} journal entries for the specified date range.", entries.size());
+        }
+
+        // Calculate debits and credits per account
+        for (JournalEntry entry : entries) {
+            List<TransactionRequest> transactions = transactionRequestRepository.findAllByPr(entry.getPr());
+            for (TransactionRequest transaction : transactions) {
+                String accountName = transaction.getAccount().getAccountName();
+                Double amount = transaction.getAmount();
+
+                if (transaction.getTransactionType() == AccountType.DEBIT) {
+                    accountDebits.put(accountName, accountDebits.getOrDefault(accountName, 0.0) + amount);
+                } else {
+                    accountCredits.put(accountName, accountCredits.getOrDefault(accountName, 0.0) + amount);
+                }
+            }
+        }
+
+        // Prepare trial balance entries
+        List<TrialBalanceDTO> trialBalanceList = new ArrayList<>();
+        Set<String> allAccounts = new HashSet<>(accountDebits.keySet());
+        allAccounts.addAll(accountCredits.keySet());
+
+        for (String accountName : allAccounts) {
+            double debit = accountDebits.getOrDefault(accountName, 0.0);
+            double credit = accountCredits.getOrDefault(accountName, 0.0);
+            trialBalanceList.add(new TrialBalanceDTO(accountName, debit, credit));
+        }
+
+        logger.info("Generated trial balance with {} entries.", trialBalanceList.size());
+        return trialBalanceList;
     }
 
     @Deprecated

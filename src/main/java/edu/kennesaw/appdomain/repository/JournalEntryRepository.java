@@ -8,11 +8,16 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Date;
 import java.util.List;
 
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long> {
+
     JournalEntry findByPr(Long pr);
+
     List<JournalEntry> findAllByIsApproved(Boolean isApproved);
+
+    List<JournalEntry> findAllByIsApprovedAndDateBetween(boolean isApproved, Date date1, Date date2);
 
     @Modifying
     @Transactional

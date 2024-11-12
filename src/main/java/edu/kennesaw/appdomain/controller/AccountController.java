@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -84,6 +86,7 @@ public class AccountController {
         User user = jer.getUser();
         JournalEntry je = new JournalEntry();
         je.setUser(user);
+        je.setDate(new Date());
         journalEntryRepository.save(je);
         try {
             for (TransactionDTO transactionDTO : transactionDTOs) {
@@ -113,6 +116,7 @@ public class AccountController {
         User user = jer.getUser();
         JournalEntry je = new JournalEntry();
         je.setUser(user);
+        je.setDate(new Date());
         journalEntryRepository.save(je);
         try {
             String token = UUID.randomUUID().toString();
@@ -153,6 +157,15 @@ public class AccountController {
     @GetMapping("/general-ledger")
     public ResponseEntity<?> getGeneralLedger() {
         return ResponseEntity.ok(accountService.getJournalEntryRequests(true));
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT')")
+    @GetMapping("/trial-balance")
+    public ResponseEntity<List<TrialBalanceDTO>> getTrialBalance(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        List<TrialBalanceDTO> trialBalance = accountService.getTrialBalance(startDate, endDate);
+        return ResponseEntity.ok(trialBalance);
     }
 
     @GetMapping("/approve-journal-entry")

@@ -2,6 +2,8 @@ package edu.kennesaw.appdomain.entity;
 
 import jakarta.persistence.*;
 
+import java.util.Date;
+
 @Entity
 public class JournalEntry {
 
@@ -16,7 +18,11 @@ public class JournalEntry {
     @JoinColumn(nullable = false, name = "userid")
     private User user;
 
+    @Column
     private Boolean isApproved = null;
+
+    @Column
+    private Date date;
 
     public Long getPr() {
         return pr;
@@ -49,5 +55,14 @@ public class JournalEntry {
     public void setApproved(Boolean isApproved) {
         this.isApproved = isApproved;
     }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
 
 }

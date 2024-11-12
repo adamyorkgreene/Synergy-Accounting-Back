@@ -15,7 +15,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -80,11 +79,11 @@ public class UserService {
         user.setUserType(UserType.DEFAULT);
 
         UserSecurity userSecurity = new UserSecurity();
-        userSecurity.setPassword(passwordEncoder.encode(password));
+        userSecurity.setPassword(password, passwordEncoder);
         userSecurity.setIsActive(true);
         userSecurity.setIsVerified(false);
         userSecurity.setIsPasswordExpired(false);
-        userSecurity.setOldPasswords(new HashSet<OldPassword>());
+        userSecurity.setOldPasswords(new HashSet<>());
         userSecurity.setUser(user);
 
         UserDate userDate = new UserDate();
@@ -200,7 +199,7 @@ public class UserService {
 
         User user = resetToken.getUser();
 
-        if (!user.getUserSecurity().setPassword(passwordEncoder.encode(newPassword))) {
+        if (!user.getUserSecurity().setPassword(newPassword, passwordEncoder)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("You must change your password" +
                     " to one you have not previously used."));
         }

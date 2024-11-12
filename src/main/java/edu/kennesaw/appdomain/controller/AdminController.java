@@ -3,6 +3,7 @@ package edu.kennesaw.appdomain.controller;
 
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.dto.MessageResponse;
+import edu.kennesaw.appdomain.dto.NewUserDTO;
 import edu.kennesaw.appdomain.dto.UserDTO;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.exception.UserAttributeMissingException;
@@ -38,11 +39,8 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/updateuser")
-    public ResponseEntity<?> updateUser(@RequestBody UserDTO user) throws IOException, InterruptedException {
-        if (user.getUserid().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("UserID must be valid.");
-        }
-        return adminService.updateUser(user);
+    public ResponseEntity<?> updateUser(@RequestBody NewUserDTO userResponse) throws IOException, InterruptedException {
+        return adminService.updateUser(userResponse);
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
@@ -66,11 +64,11 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/usersearch")
     public ResponseEntity<?> findUser(@RequestBody UserDTO user) {
-        int userid = 0;
-        String email = "";
-        String username = "";
+        Long userid = null;
+        String email = null;
+        String username = null;
         if (user.getUserid().isPresent()) {
-            userid = user.getUserid().get();
+            userid = Long.valueOf(user.getUserid().get());
         }
         if (user.getEmail().isPresent()) {
             email = user.getEmail().get();
@@ -78,16 +76,20 @@ public class AdminController {
         if (user.getUsername().isPresent()) {
             username = user.getUsername().get();
         }
-        if (userRepository.findById(Integer.toUnsignedLong(userid)).isPresent()) {
-            return ResponseEntity.ok(userRepository.findById(Integer.toUnsignedLong(userid)).get());
+        User foundUser = null;
+        if (user.getUserid().isPresent()) {
+            assert userid != null;
+            if (userRepository.findById(userid).isPresent()) {
+                foundUser = userRepository.findById(userid).get();
+            }
         }
         if (userRepository.findByEmail(email).isPresent()) {
-            return ResponseEntity.ok(userRepository.findByEmail(email).get());
+            foundUser = userRepository.findByEmail(email).get();
         }
         if (userRepository.findByUsername(username).isPresent()) {
-            return ResponseEntity.ok(userRepository.findByUsername(username));
+            foundUser = userRepository.findByUsername(username).get();
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return foundUser != null ? ResponseEntity.ok(new NewUserDTO(foundUser)) : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
 }

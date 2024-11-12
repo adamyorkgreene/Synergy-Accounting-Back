@@ -21,7 +21,6 @@ public class UserDate {
     private User user;
 
     @Column
-    @JsonProperty("birthday")
     private Date birthday;
 
     @Column(nullable = false)
