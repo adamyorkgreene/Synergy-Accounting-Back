@@ -71,6 +71,68 @@ public class AccountService {
         return accountRepository.getChartOfAccountsWithUsername();
     }
 
+    public IncomeStatementDTO getIncomeStatement(Date startDate, Date endDate) {
+
+        List<Account> revenueAccounts = accountRepository.findAllByAccountCategory(AccountCategory.REVENUE);
+        List<Account> expenseAccounts = accountRepository.findAllByAccountCategory(AccountCategory.EXPENSE);
+
+        List<AccountResponseDTO> revenueTransactionDTOs = new ArrayList<>();
+        List<AccountResponseDTO> expenseTransactionDTOs = new ArrayList<>();
+
+        // Convert revenue transactions to DTOs
+        for (Account revenueAccount : revenueAccounts) {
+            List<Transaction> transactions = transactionRepository.findAllByAccountAndTransactionDateBetween(revenueAccount, startDate, endDate);
+            transactions.forEach(transaction -> revenueTransactionDTOs.add(convertTransactionToAccountDTO(transaction)));
+        }
+
+        // Convert expense transactions to DTOs
+        for (Account expenseAccount : expenseAccounts) {
+            List<Transaction> transactions = transactionRepository.findAllByAccountAndTransactionDateBetween(expenseAccount, startDate, endDate);
+            transactions.forEach(transaction -> expenseTransactionDTOs.add(convertTransactionToAccountDTO(transaction)));
+        }
+
+        // Merge DTOs by account to consolidate transactions
+        List<AccountResponseDTO> revenueAccountsDTO = mergeAccountDTOs(revenueTransactionDTOs);
+        List<AccountResponseDTO> expenseAccountsDTO = mergeAccountDTOs(expenseTransactionDTOs);
+
+        // Calculate total revenue and expenses
+        double totalRevenue = revenueAccountsDTO.stream().mapToDouble(this::calculateNetBalance).sum();
+        double totalExpenses = expenseAccountsDTO.stream().mapToDouble(this::calculateNetBalance).sum();
+
+        return new IncomeStatementDTO(revenueAccountsDTO, expenseAccountsDTO, totalRevenue, totalExpenses, totalRevenue - totalExpenses);
+    }
+
+    public BalanceSheetDTO getBalanceSheet(Date startDate, Date endDate) {
+        // Retrieve all asset, liability, and equity accounts
+        List<Account> assetAccounts = accountRepository.findAllByAccountCategory(AccountCategory.ASSET);
+        List<Account> liabilityAccounts = accountRepository.findAllByAccountCategory(AccountCategory.LIABILITY);
+        List<Account> equityAccounts = accountRepository.findAllByAccountCategory(AccountCategory.EQUITY);
+
+        // Process transactions for each category
+        List<AccountResponseDTO> assetAccountDTOs = processAccountTransactions(assetAccounts, startDate, endDate);
+        List<AccountResponseDTO> liabilityAccountDTOs = processAccountTransactions(liabilityAccounts, startDate, endDate);
+        List<AccountResponseDTO> equityAccountDTOs = processAccountTransactions(equityAccounts, startDate, endDate);
+
+        // Calculate net income and add it to total equity
+        double netIncome = getIncomeStatement(startDate, endDate).getNetIncome();
+
+        AccountResponseDTO netIncomeAccount = new AccountResponseDTO("Net Income", null,
+                "",  AccountType.CREDIT,
+                AccountCategory.EQUITY, AccountSubCategory.OPERATING, 0.0,
+                netIncome > 0 ? 0.0 : -netIncome,
+                netIncome > 0 ? netIncome : 0.0, new Date(), "admin", true);
+
+        equityAccountDTOs.add(netIncomeAccount);
+
+        // Calculate total assets, liabilities, and equity
+        double totalAssets = assetAccountDTOs.stream().mapToDouble(this::calculateNetBalance).sum();
+        double totalLiabilities = liabilityAccountDTOs.stream().mapToDouble(this::calculateNetBalance).sum();
+        double totalEquity = equityAccountDTOs.stream().mapToDouble(this::calculateNetBalance).sum();
+
+        return new BalanceSheetDTO(assetAccountDTOs, liabilityAccountDTOs, equityAccountDTOs, totalAssets, totalLiabilities, totalEquity);
+    }
+
+
     public List<TransactionResponseDTO> getTransactionsByAccountNumber(Long accountNumber) {
         List<Transaction> transactions = transactionRepository.findByAccountAccountNumber(accountNumber);
         return transactions.stream()
@@ -330,6 +392,53 @@ public class AccountService {
         return trialBalanceList;
     }
 
+    public RetainedEarningsDTO getRetainedEarnings(Date startDate, Date endDate) {
+        // Step 1: Retrieve the Retained Earnings account
+        Account retainedEarningsAccount = accountRepository.findAllByAccountCategory(AccountCategory.EQUITY).stream()
+                .filter(account -> account.getAccountName().equalsIgnoreCase("Retained Earnings"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Retained Earnings account not found"));
+
+        // Step 2: Calculate Beginning Retained Earnings
+        double beginningRetainedEarnings = calculateAccountBalanceUpToDate(retainedEarningsAccount, startDate);
+
+        // Step 3: Get Net Income for the reporting period
+        double netIncome = getIncomeStatement(startDate, endDate).getNetIncome();
+
+        // Step 4: Fetch Transactions During the Report Period
+        List<Transaction> retainedEarningsTransactions = transactionRepository.findAllByAccountAndTransactionDateBetween(
+                retainedEarningsAccount, startDate, endDate
+        );
+
+        // Sum all debit transactions (e.g., withdrawals)
+        double totalWithdrawals = retainedEarningsTransactions.stream()
+                .filter(t -> t.getTransactionType() == AccountType.DEBIT)
+                .mapToDouble(Transaction::getAmount).sum();
+
+        // Step 5: Calculate Ending Retained Earnings
+        double endingRetainedEarnings = beginningRetainedEarnings + netIncome - totalWithdrawals;
+
+        // Step 6: Build dynamic rows for the retained earnings statement
+        List<RetainedEarningsDTO.Row> rows = new ArrayList<>();
+        rows.add(new RetainedEarningsDTO.Row("Beginning Retained Earnings", beginningRetainedEarnings));
+        rows.add(new RetainedEarningsDTO.Row("Net Income", netIncome));
+
+        // Add each debit transaction as a row with its description
+        retainedEarningsTransactions.stream()
+                .filter(t -> t.getTransactionType() == AccountType.DEBIT)
+                .forEach(transaction -> rows.add(new RetainedEarningsDTO.Row(
+                        transaction.getDescription(),
+                        transaction.getAmount()
+                )));
+
+        rows.add(new RetainedEarningsDTO.Row("Ending Retained Earnings", endingRetainedEarnings));
+
+        // Return the DTO
+        return new RetainedEarningsDTO(rows);
+    }
+
+
+
     @Deprecated
     public List<JournalEntryRequest> getJournalEntryRequestsOld(Boolean isApproved) {
 
@@ -497,6 +606,116 @@ public class AccountService {
             throw new RuntimeException("No available account numbers in category range " + category);
         }
         return maxAccountNumber + 1;
+    }
+
+    private double calculateCurrentBalance(Account account) {
+        if (account.getNormalSide() == AccountType.CREDIT) {
+            return account.getCreditBalance() - account.getDebitBalance();
+        } else {
+            return account.getDebitBalance() - account.getCreditBalance();
+        }
+    }
+
+    private AccountResponseDTO convertAccountToDTO(Account account) {
+
+        return new AccountResponseDTO(account.getAccountName(), account.getAccountNumber(),
+                account.getAccountDescription(), account.getNormalSide(), account.getAccountCategory(),
+                account.getAccountSubCategory(), account.getInitialBalance(), account.getDebitBalance(),
+                account.getCreditBalance(), account.getDateAdded(), account.getCreator().getUsername(),
+                account.getIsActive());
+
+    }
+
+    private AccountResponseDTO convertTransactionToAccountDTO(Transaction transaction) {
+        Account account = transaction.getAccount();
+        return new AccountResponseDTO(
+                account.getAccountName(),
+                account.getAccountNumber(),
+                account.getAccountDescription(),
+                account.getNormalSide(),
+                account.getAccountCategory(),
+                account.getAccountSubCategory(),
+                account.getInitialBalance(),
+                transaction.getTransactionType() == AccountType.DEBIT ? transaction.getAmount() : 0.0,
+                transaction.getTransactionType() == AccountType.CREDIT ? transaction.getAmount() : 0.0,
+                transaction.getTransactionDate(),
+                account.getCreator().getUsername(),
+                account.getIsActive()
+        );
+    }
+
+    private List<AccountResponseDTO> mergeAccountDTOs(List<AccountResponseDTO> transactionDTOs) {
+        Map<Long, AccountResponseDTO> accountDTOMap = new HashMap<>();
+
+        for (AccountResponseDTO transactionDTO : transactionDTOs) {
+            Long accountNumber = transactionDTO.getAccountNumber();
+
+            // If the account is already in the map, update its balances
+            if (accountDTOMap.containsKey(accountNumber)) {
+                AccountResponseDTO existingDTO = accountDTOMap.get(accountNumber);
+                existingDTO.setDebitBalance(existingDTO.getDebitBalance() + transactionDTO.getDebitBalance());
+                existingDTO.setCreditBalance(existingDTO.getCreditBalance() + transactionDTO.getCreditBalance());
+            } else {
+                // Otherwise, add the new DTO to the map
+                accountDTOMap.put(accountNumber, transactionDTO);
+            }
+        }
+
+        // Return the consolidated list of AccountResponseDTOs
+        return new ArrayList<>(accountDTOMap.values());
+    }
+
+    private double calculateNetBalance(AccountResponseDTO accountDTO) {
+        if (accountDTO.getAccountCategory() == AccountCategory.EQUITY) {
+            return accountDTO.getCreditBalance() - accountDTO.getDebitBalance();
+        } else {
+            // Standard handling for other accounts
+            if (accountDTO.getNormalSide() == AccountType.DEBIT) {
+                return accountDTO.getDebitBalance() - accountDTO.getCreditBalance();
+            } else {
+                return accountDTO.getCreditBalance() - accountDTO.getDebitBalance();
+            }
+        }
+    }
+
+
+    private List<AccountResponseDTO> processAccountTransactions(List<Account> accounts, Date startDate, Date endDate) {
+        List<AccountResponseDTO> accountDTOs = new ArrayList<>();
+        for (Account account : accounts) {
+            List<Transaction> transactions = transactionRepository.findAllByAccountAndTransactionDateBetween(account, startDate, endDate);
+            AccountResponseDTO accountDTO = new AccountResponseDTO(
+                    account.getAccountName(),
+                    account.getAccountNumber(),
+                    account.getAccountDescription(),
+                    account.getNormalSide(),
+                    account.getAccountCategory(),
+                    account.getAccountSubCategory(),
+                    account.getInitialBalance(),
+                    transactions.stream().mapToDouble(tr -> tr.getTransactionType() == AccountType.DEBIT ? tr.getAmount() : 0).sum(),
+                    transactions.stream().mapToDouble(tr -> tr.getTransactionType() == AccountType.CREDIT ? tr.getAmount() : 0).sum(),
+                    account.getDateAdded(),
+                    account.getCreator().getUsername(),
+                    account.getIsActive()
+            );
+            accountDTOs.add(accountDTO);
+        }
+        return accountDTOs;
+    }
+
+    // Helper to calculate the balance of an account up to a specific date
+    private double calculateAccountBalanceUpToDate(Account account, Date date) {
+        List<Transaction> transactions = transactionRepository.findAllByAccountAndTransactionDateBefore(account, date);
+
+        double debits = transactions.stream()
+                .filter(t -> t.getTransactionType() == AccountType.DEBIT)
+                .mapToDouble(Transaction::getAmount).sum();
+
+        double credits = transactions.stream()
+                .filter(t -> t.getTransactionType() == AccountType.CREDIT)
+                .mapToDouble(Transaction::getAmount).sum();
+
+        // Retained Earnings is a credit account, so normal balance is credits - debits
+        return account.getNormalSide() == AccountType.CREDIT ? credits - debits : debits - credits;
     }
 
 }

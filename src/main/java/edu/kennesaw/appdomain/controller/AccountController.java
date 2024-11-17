@@ -2,13 +2,11 @@ package edu.kennesaw.appdomain.controller;
 
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.*;
-import edu.kennesaw.appdomain.repository.AccountRepository;
 import edu.kennesaw.appdomain.repository.AttachmentRepository;
 import edu.kennesaw.appdomain.repository.JournalEntryRepository;
 import edu.kennesaw.appdomain.repository.TransactionRequestRepository;
 import edu.kennesaw.appdomain.service.AccountService;
 import edu.kennesaw.appdomain.service.EmailService;
-import edu.kennesaw.appdomain.types.UserType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -167,6 +165,34 @@ public class AccountController {
         List<TrialBalanceDTO> trialBalance = accountService.getTrialBalance(startDate, endDate);
         return ResponseEntity.ok(trialBalance);
     }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT')")
+    @GetMapping("/income-statement")
+    public ResponseEntity<IncomeStatementDTO> getIncomeStatement(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        IncomeStatementDTO incomeStatement = accountService.getIncomeStatement(startDate, endDate);
+        return ResponseEntity.ok(incomeStatement);
+    }
+
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT')")
+    @GetMapping("/balance-sheet")
+    public ResponseEntity<BalanceSheetDTO> getBalanceSheet(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        BalanceSheetDTO balanceSheet = accountService.getBalanceSheet(startDate, endDate);
+        return ResponseEntity.ok(balanceSheet);
+    }
+
+    @GetMapping("/retained-earnings")
+    public ResponseEntity<RetainedEarningsDTO> getRetainedEarnings(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        RetainedEarningsDTO retainedEarnings = accountService.getRetainedEarnings(startDate, endDate);
+        return ResponseEntity.ok(retainedEarnings);
+    }
+
 
     @GetMapping("/approve-journal-entry")
     public ResponseEntity<?> approveJournalEntry(@RequestParam("token") Long pr) {
