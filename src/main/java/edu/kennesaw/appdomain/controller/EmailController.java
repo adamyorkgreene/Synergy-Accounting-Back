@@ -1,13 +1,17 @@
 package edu.kennesaw.appdomain.controller;
 
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
+import edu.kennesaw.appdomain.dto.EmailAttachment;
 import edu.kennesaw.appdomain.dto.MessageResponse;
 import edu.kennesaw.appdomain.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
 @CrossOrigin(origins = "https://synergyaccounting.app", allowCredentials = "true")
@@ -18,11 +22,35 @@ public class EmailController {
     @Autowired
     private EmailService emailService;
 
-    @PostMapping("/send-email")
-    public ResponseEntity<?> sendAdminEmail(@RequestBody AdminEmailObject aem) {
-        emailService.sendAdminEmail(aem.getTo(), aem.getFrom(), aem.getSubject(), aem.getBody());
-        return ResponseEntity.ok().body(new MessageResponse("Email sent.")) ;
+    @PostMapping(value = "/send-email", consumes = "multipart/form-data")
+    public ResponseEntity<?> sendAdminEmail(
+            @RequestParam("to") String to,
+            @RequestParam("from") String from,
+            @RequestParam("subject") String subject,
+            @RequestParam("body") String body,
+            @RequestParam(value = "attachments", required = false) List<MultipartFile> attachments
+    ) {
+        List<EmailAttachment> emailAttachments = null;
+
+        if (attachments != null && !attachments.isEmpty()) {
+            emailAttachments = attachments.stream().map(file -> {
+                try {
+                    EmailAttachment attachment = new EmailAttachment();
+                    attachment.setFileName(file.getOriginalFilename());
+                    attachment.setContentBase64(Base64.getEncoder().encodeToString(file.getBytes()));
+                    attachment.setContentType(file.getContentType());
+                    return attachment;
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to process attachment: " + file.getOriginalFilename(), e);
+                }
+            }).toList();
+        }
+
+        emailService.sendAdminEmail(to, from, subject, body, emailAttachments);
+        return ResponseEntity.ok().body(new MessageResponse("Email sent."));
     }
+
+
 
     @GetMapping("/emails/{username}")
     public ResponseEntity<?> getMail(@PathVariable("username") String username) {

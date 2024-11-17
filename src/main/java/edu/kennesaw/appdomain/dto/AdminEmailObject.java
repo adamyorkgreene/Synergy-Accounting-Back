@@ -1,8 +1,7 @@
 package edu.kennesaw.appdomain.dto;
 
-import edu.kennesaw.appdomain.entity.User;
-
 import java.util.Date;
+import java.util.List;
 
 public class AdminEmailObject {
 
@@ -17,6 +16,8 @@ public class AdminEmailObject {
     private String body;
 
     private String id;
+
+    private List<EmailAttachment> attachments = null;
 
     public void setTo(String to) {
         this.to = to;
@@ -40,6 +41,10 @@ public class AdminEmailObject {
 
     public void setId(String id) { this.id = id; }
 
+    public void setAttachments(List<EmailAttachment> attachments) {
+        this.attachments = attachments;
+    }
+
     public String getTo() {
         return to;
     }
@@ -60,4 +65,9 @@ public class AdminEmailObject {
 
     public String getId() { return id; }
 
+    public List<EmailAttachment> getAttachments() {
+        return attachments;
+    }
+
 }
+

@@ -2,6 +2,7 @@ package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.config.MailConfig;
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
+import edu.kennesaw.appdomain.dto.EmailAttachment;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.entity.UserDate;
 import edu.kennesaw.appdomain.repository.UserDateRepository;
@@ -10,6 +11,7 @@ import edu.kennesaw.appdomain.types.UserType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -223,26 +225,53 @@ public class EmailService {
         }
     }
 
-    public void sendAdminEmail(String to, String from, String subject, String body) {
-        String emailPassword = userRepository.findByUsername(from).get().getUserSecurity().getEmailPassword();
+    public void sendAdminEmail(String to, String from, String subject, String body, List<EmailAttachment> attachments) {
+        // Retrieve email password for the sender
+        String emailPassword = userRepository.findByUsername(from)
+                .orElseThrow(() -> new RuntimeException("User not found"))
+                .getUserSecurity()
+                .getEmailPassword();
+
         JavaMailSender adminMailSender = mailConfig.getAdminMailSender(from.toLowerCase(), emailPassword);
-        MimeMessage mm = adminMailSender.createMimeMessage();
+        MimeMessage mimeMessage = adminMailSender.createMimeMessage();
+
         try {
-            MimeMessageHelper helper = new MimeMessageHelper(mm, false, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8"); // Enable multipart emails
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(body);
+            helper.setText(body, false); // Send text as plain text
             helper.setFrom(from.toLowerCase() + "@synergyaccounting.app");
-            mm.setHeader("Message-ID", "<" + System.currentTimeMillis() + "@synergyaccounting.app>");
-            mm.setHeader("X-Mailer", "JavaMailer");
-            mm.setHeader("Return-Path", from.toLowerCase() + "@synergyaccounting.app");
-            mm.setHeader("Reply-To", from.toLowerCase() + "@synergyaccounting.app");
-            mm.setSentDate(new Date());
-            adminMailSender.send(mm);
+
+            // Add attachments if present
+            if (attachments != null && !attachments.isEmpty()) {
+                for (EmailAttachment attachment : attachments) {
+                    if (attachment.getFileName() != null && attachment.getContentBase64() != null) {
+                        try {
+                            byte[] content = Base64.getDecoder().decode(attachment.getContentBase64());
+                            helper.addAttachment(attachment.getFileName(), new ByteArrayResource(content));
+                        } catch (IllegalArgumentException e) {
+                            System.err.println("Failed to decode attachment: " + attachment.getFileName());
+                            throw new RuntimeException("Invalid attachment encoding for file: " + attachment.getFileName(), e);
+                        }
+                    } else {
+                        System.err.println("Attachment is missing fileName or contentBase64: " + attachment);
+                    }
+                }
+            }
+
+            mimeMessage.setHeader("Message-ID", "<" + System.currentTimeMillis() + "@synergyaccounting.app>");
+            mimeMessage.setHeader("X-Mailer", "JavaMailer");
+            mimeMessage.setHeader("Return-Path", from.toLowerCase() + "@synergyaccounting.app");
+            mimeMessage.setHeader("Reply-To", from.toLowerCase() + "@synergyaccounting.app");
+            mimeMessage.setSentDate(new Date());
+
+            adminMailSender.send(mimeMessage);
         } catch (MessagingException e) {
-            System.err.println("Error sending email: " + e.getMessage());
+            System.err.println("Error creating or sending email: " + e.getMessage());
+            throw new RuntimeException("Error sending email", e);
         }
     }
+
 
     public void sendMassManagerEmail(String subject, String body) {
         List<User> managers = userRepository.getAllUsersByUserType(UserType.MANAGER);

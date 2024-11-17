@@ -1,6 +1,7 @@
 package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
+import edu.kennesaw.appdomain.dto.EmailAttachment;
 import jakarta.mail.*;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.stereotype.Service;
@@ -168,20 +169,44 @@ public class MailboxReaderService {
     }
 
     private AdminEmailObject parseEmail(String rawEmail) throws MessagingException, IOException {
-        Session s = Session.getInstance(new Properties());
+        Session session = Session.getInstance(new Properties());
         InputStream is = new ByteArrayInputStream(rawEmail.getBytes());
-        MimeMessage message = new MimeMessage(s, is);
+        MimeMessage message = new MimeMessage(session, is);
         AdminEmailObject emailObject = new AdminEmailObject();
         BufferedReader br = new BufferedReader(new StringReader(rawEmail));
+
         emailObject.setId(br.readLine());
         br.close();
         emailObject.setDate(message.getSentDate());
         emailObject.setSubject(message.getSubject());
-        emailObject.setBody(getTextFromMessage(message));
         emailObject.setTo(message.getRecipients(Message.RecipientType.TO)[0].toString());
         emailObject.setFrom(message.getFrom()[0].toString());
+
+        emailObject.setBody(getTextFromMessage(message));
+
+        List<EmailAttachment> attachments = new ArrayList<>();
+        if (message.getContent() instanceof Multipart) {
+            Multipart multipart = (Multipart) message.getContent();
+            for (int i = 0; i < multipart.getCount(); i++) {
+                BodyPart bodyPart = multipart.getBodyPart(i);
+
+                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition()) ||
+                        bodyPart.getFileName() != null) {
+                    EmailAttachment attachment = new EmailAttachment();
+                    attachment.setFileName(bodyPart.getFileName());
+                    attachment.setContentType(bodyPart.getContentType());
+                    attachment.setContentBase64(
+                            Base64.getEncoder().encodeToString(bodyPart.getInputStream().readAllBytes())
+                    );
+                    attachments.add(attachment);
+                }
+            }
+        }
+        emailObject.setAttachments(attachments);
+
         return emailObject;
     }
+
 
     private String getTextFromMessage(MimeMessage message) throws MessagingException, IOException {
         Object content = message.getContent();
