@@ -20,15 +20,15 @@ public class GeneralMessage {
     @Column(nullable = false)
     private Long id;
 
-    public void setMessage() {
+    public void setMessage(String message) {
         this.message = message;
     }
 
-    public void setDate() {
+    public void setDate(String date) {
         this.date = date;
     }
 
-    public void setUsername() {
+    public void setUsername(String username) {
         this.username = username;
     }
 
