@@ -102,6 +102,37 @@ public class AccountService {
         return new IncomeStatementDTO(revenueAccountsDTO, expenseAccountsDTO, totalRevenue, totalExpenses, totalRevenue - totalExpenses);
     }
 
+    public IncomeStatementDTO getIncomeStatement() {
+
+        List<Account> revenueAccounts = accountRepository.findAllByAccountCategory(AccountCategory.REVENUE);
+        List<Account> expenseAccounts = accountRepository.findAllByAccountCategory(AccountCategory.EXPENSE);
+
+        List<AccountResponseDTO> revenueTransactionDTOs = new ArrayList<>();
+        List<AccountResponseDTO> expenseTransactionDTOs = new ArrayList<>();
+
+        // Convert revenue transactions to DTOs
+        for (Account revenueAccount : revenueAccounts) {
+            List<Transaction> transactions = transactionRepository.findAllByAccount(revenueAccount);
+            transactions.forEach(transaction -> revenueTransactionDTOs.add(convertTransactionToAccountDTO(transaction)));
+        }
+
+        // Convert expense transactions to DTOs
+        for (Account expenseAccount : expenseAccounts) {
+            List<Transaction> transactions = transactionRepository.findAllByAccount(expenseAccount);
+            transactions.forEach(transaction -> expenseTransactionDTOs.add(convertTransactionToAccountDTO(transaction)));
+        }
+
+        // Merge DTOs by account to consolidate transactions
+        List<AccountResponseDTO> revenueAccountsDTO = mergeAccountDTOs(revenueTransactionDTOs);
+        List<AccountResponseDTO> expenseAccountsDTO = mergeAccountDTOs(expenseTransactionDTOs);
+
+        // Calculate total revenue and expenses
+        double totalRevenue = revenueAccountsDTO.stream().mapToDouble(this::calculateNetBalance).sum();
+        double totalExpenses = expenseAccountsDTO.stream().mapToDouble(this::calculateNetBalance).sum();
+
+        return new IncomeStatementDTO(revenueAccountsDTO, expenseAccountsDTO, totalRevenue, totalExpenses, totalRevenue - totalExpenses);
+    }
+
     public BalanceSheetDTO getBalanceSheet(Date startDate, Date endDate) {
         // Retrieve all asset, liability, and equity accounts
         List<Account> assetAccounts = accountRepository.findAllByAccountCategory(AccountCategory.ASSET);
@@ -132,6 +163,26 @@ public class AccountService {
         return new BalanceSheetDTO(assetAccountDTOs, liabilityAccountDTOs, equityAccountDTOs, totalAssets, totalLiabilities, totalEquity);
     }
 
+    public NumberDTO getTotalAssets() {
+        List<Account> assetAccounts = accountRepository.findAllByAccountCategory(AccountCategory.ASSET);
+        List<AccountResponseDTO> assetAccountDTOs = processAccountTransactions(assetAccounts);
+        double totalAssets = assetAccountDTOs.stream().mapToDouble(this::calculateNetBalance).sum();
+        return new NumberDTO(totalAssets);
+    }
+
+    public NumberDTO getTotalLiabilities() {
+        List<Account> liabilityAccounts = accountRepository.findAllByAccountCategory(AccountCategory.LIABILITY);
+        List<AccountResponseDTO> liabilityAccountDTOs = processAccountTransactions(liabilityAccounts);
+        double totalLiabilities = liabilityAccountDTOs.stream().mapToDouble(this::calculateNetBalance).sum();
+        return new NumberDTO(totalLiabilities);
+    }
+
+    public NumberDTO getTotalInventory() {
+        List<Account> inventoryAccounts = accountRepository.findAllByAccountNameContainingIgnoreCase("inventory");
+        List<AccountResponseDTO> inventoryAccountDTOs = processAccountTransactions(inventoryAccounts);
+        double totalInventory = inventoryAccountDTOs.stream().mapToDouble(this::calculateNetBalance).sum();
+        return new NumberDTO(totalInventory);
+    }
 
     public List<TransactionResponseDTO> getTransactionsByAccountNumber(Long accountNumber) {
         List<Transaction> transactions = transactionRepository.findByAccountAccountNumber(accountNumber);
@@ -678,11 +729,33 @@ public class AccountService {
         }
     }
 
-
     private List<AccountResponseDTO> processAccountTransactions(List<Account> accounts, Date startDate, Date endDate) {
         List<AccountResponseDTO> accountDTOs = new ArrayList<>();
         for (Account account : accounts) {
             List<Transaction> transactions = transactionRepository.findAllByAccountAndTransactionDateBetween(account, startDate, endDate);
+            AccountResponseDTO accountDTO = new AccountResponseDTO(
+                    account.getAccountName(),
+                    account.getAccountNumber(),
+                    account.getAccountDescription(),
+                    account.getNormalSide(),
+                    account.getAccountCategory(),
+                    account.getAccountSubCategory(),
+                    account.getInitialBalance(),
+                    transactions.stream().mapToDouble(tr -> tr.getTransactionType() == AccountType.DEBIT ? tr.getAmount() : 0).sum(),
+                    transactions.stream().mapToDouble(tr -> tr.getTransactionType() == AccountType.CREDIT ? tr.getAmount() : 0).sum(),
+                    account.getDateAdded(),
+                    account.getCreator().getUsername(),
+                    account.getIsActive()
+            );
+            accountDTOs.add(accountDTO);
+        }
+        return accountDTOs;
+    }
+
+    private List<AccountResponseDTO> processAccountTransactions(List<Account> accounts) {
+        List<AccountResponseDTO> accountDTOs = new ArrayList<>();
+        for (Account account : accounts) {
+            List<Transaction> transactions = transactionRepository.findAllByAccount(account);
             AccountResponseDTO accountDTO = new AccountResponseDTO(
                     account.getAccountName(),
                     account.getAccountNumber(),

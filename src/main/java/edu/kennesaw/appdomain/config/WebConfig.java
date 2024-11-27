@@ -10,11 +10,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("https://synergyaccounting.app")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .exposedHeaders("X-CSRF-TOKEN")
-                .allowCredentials(true);
+                .allowedOrigins("https://synergyaccounting.app", "https://www.synergyaccounting.app") // Allow both domains
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allow common methods
+                .allowedHeaders("*") // Allow all headers
+                .exposedHeaders("X-CSRF-TOKEN") // Expose CSRF token for frontend
+                .allowCredentials(true); // Enable cookies and credentials
     }
-
 }
+

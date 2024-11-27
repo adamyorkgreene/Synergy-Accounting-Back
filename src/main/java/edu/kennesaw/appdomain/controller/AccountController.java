@@ -157,7 +157,7 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getJournalEntryRequests(true));
     }
 
-    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
     @GetMapping("/trial-balance")
     public ResponseEntity<List<TrialBalanceDTO>> getTrialBalance(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
@@ -166,7 +166,7 @@ public class AccountController {
         return ResponseEntity.ok(trialBalance);
     }
 
-    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
     @GetMapping("/income-statement")
     public ResponseEntity<IncomeStatementDTO> getIncomeStatement(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
@@ -175,8 +175,7 @@ public class AccountController {
         return ResponseEntity.ok(incomeStatement);
     }
 
-
-    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
     @GetMapping("/balance-sheet")
     public ResponseEntity<BalanceSheetDTO> getBalanceSheet(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
@@ -185,6 +184,62 @@ public class AccountController {
         return ResponseEntity.ok(balanceSheet);
     }
 
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/total-assets")
+    public ResponseEntity<NumberDTO> getTotalAssets() {
+        NumberDTO totalAssets = accountService.getTotalAssets();
+        return ResponseEntity.ok(totalAssets);
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/total-liabilities")
+    public ResponseEntity<NumberDTO> getTotalLiabilities() {
+        NumberDTO totalLiabilities = accountService.getTotalLiabilities();
+        return ResponseEntity.ok(totalLiabilities);
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/current-ratio")
+    public ResponseEntity<CurrentRatioDTO> getCurrentRatio() {
+        double totalAssets = accountService.getTotalAssets().getNumber();
+        double totalLiabilities = accountService.getTotalLiabilities().getNumber();
+        return ResponseEntity.ok(new CurrentRatioDTO(totalAssets, totalLiabilities));
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/quick-ratio")
+    public ResponseEntity<QuickRatioDTO> getQuickRatio() {
+        double totalAssets = accountService.getTotalAssets().getNumber();
+        double totalLiabilities = accountService.getTotalLiabilities().getNumber();
+        double totalInventory = accountService.getTotalInventory().getNumber();
+        return ResponseEntity.ok(new QuickRatioDTO(totalAssets, totalLiabilities, totalInventory));
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/debt-to-equity-ratio")
+    public ResponseEntity<DebtToEquityRatioDTO> getDebtToEquityRatio() {
+        double totalAssets = accountService.getTotalAssets().getNumber();
+        double totalLiabilities = accountService.getTotalLiabilities().getNumber();
+        return ResponseEntity.ok(new DebtToEquityRatioDTO(totalAssets, totalLiabilities));
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/return-on-assets")
+    public ResponseEntity<ReturnOnAssetsDTO> getReturnOnAssets() {
+        double netIncome = accountService.getIncomeStatement().getNetIncome();
+        double totalAssets = accountService.getTotalAssets().getNumber();
+        return ResponseEntity.ok(new ReturnOnAssetsDTO(netIncome, totalAssets));
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
+    @GetMapping("/return-on-equity")
+    public ResponseEntity<ReturnOnEquityDTO> getReturnOnEquity() {
+        double netIncome = accountService.getIncomeStatement().getNetIncome();
+        double totalLiabilities = accountService.getTotalLiabilities().getNumber();
+        return ResponseEntity.ok(new ReturnOnEquityDTO(netIncome, totalLiabilities));
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ACCOUNTANT', 'ADMINISTRATOR')")
     @GetMapping("/retained-earnings")
     public ResponseEntity<RetainedEarningsDTO> getRetainedEarnings(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
@@ -192,7 +247,6 @@ public class AccountController {
         RetainedEarningsDTO retainedEarnings = accountService.getRetainedEarnings(startDate, endDate);
         return ResponseEntity.ok(retainedEarnings);
     }
-
 
     @GetMapping("/approve-journal-entry")
     public ResponseEntity<?> approveJournalEntry(@RequestParam("token") Long pr) {

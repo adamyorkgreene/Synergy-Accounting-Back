@@ -37,4 +37,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     List<Account> findAllByAccountCategory(AccountCategory accountCategory);
 
+    List<Account> findAllByAccountNameContainingIgnoreCase(String string);
+
 }
