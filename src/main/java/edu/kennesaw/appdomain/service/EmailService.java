@@ -3,6 +3,7 @@ package edu.kennesaw.appdomain.service;
 import edu.kennesaw.appdomain.config.MailConfig;
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.dto.EmailAttachment;
+import edu.kennesaw.appdomain.dto.ReadResponseDTO;
 import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.entity.UserDate;
 import edu.kennesaw.appdomain.repository.UserDateRepository;
@@ -336,10 +337,9 @@ public class EmailService {
 
     public List<AdminEmailObject> getUserEmails(String username) {
         try {
-            List<String> rawEmails = mailboxReaderService.getUserEmails(username);
-            return mailboxReaderService.parseRawEmailsToObject(rawEmails);
-        } catch (IOException | ParseException | MessagingException e) {
-            System.err.println(e.getMessage());
+            return mailboxReaderService.getUserEmails(username);
+        } catch (IOException e) {
+            System.err.println("Error fetching emails: " + e.getMessage());
             return Collections.emptyList();
         }
     }

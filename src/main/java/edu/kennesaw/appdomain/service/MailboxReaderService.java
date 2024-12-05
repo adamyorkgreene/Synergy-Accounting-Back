@@ -2,6 +2,7 @@ package edu.kennesaw.appdomain.service;
 
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.dto.EmailAttachment;
+import edu.kennesaw.appdomain.dto.ReadResponseDTO;
 import jakarta.mail.*;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.stereotype.Service;
@@ -14,46 +15,109 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 public class MailboxReaderService {
 
     public static final String VMAIL_PATH = "/var/vmail/synergyaccounting.app/";
 
-    public List<String> getUserEmails(String username) throws IOException {
+    public List<AdminEmailObject> getUserEmails(String username) throws IOException {
+        List<AdminEmailObject> allEmails = new ArrayList<>();
+        Path userNewDir = Paths.get(VMAIL_PATH + username.toLowerCase() + "/new");
+        Path userCurDir = Paths.get(VMAIL_PATH + username.toLowerCase() + "/cur");
 
-        List<String> emails = new ArrayList<>();
-        Path userMailDir = Paths.get(VMAIL_PATH + username.toLowerCase() + "/new");
+        // Process emails in /new (unread)
+        if (Files.exists(userNewDir) && Files.isDirectory(userNewDir)) {
+            allEmails.addAll(readAndParseEmails(userNewDir, false)); // Mark as unread
+        }
 
-        if (Files.exists(userMailDir) && Files.isDirectory(userMailDir)) {
-            try (DirectoryStream<Path> userMails = Files.newDirectoryStream(userMailDir)) {
-                for (Path userMail : userMails) {
-                    StringBuilder emailContent = new StringBuilder();
+        // Process emails in /cur (read)
+        if (Files.exists(userCurDir) && Files.isDirectory(userCurDir)) {
+            allEmails.addAll(readAndParseEmails(userCurDir, true)); // Mark as read
+        }
 
-                    try (BufferedReader reader = Files.newBufferedReader(userMail)) {
-                        emailContent.append(userMail.getFileName().toString()).append("\n");
-                        String line = reader.readLine();
-                        while (line != null) {
-                            emailContent.append(line).append("\n");
-                            line = reader.readLine();
+        return allEmails;
+    }
 
-                        }
+    private List<AdminEmailObject> readAndParseEmails(Path directory, boolean isRead) throws IOException {
+        List<AdminEmailObject> emails = new ArrayList<>();
 
-                    } catch (Exception e) {
-                        System.err.println(e.getMessage());
+        try (DirectoryStream<Path> emailFiles = Files.newDirectoryStream(directory)) {
+            for (Path emailFile : emailFiles) {
+                StringBuilder rawEmail = new StringBuilder();
+                try (BufferedReader reader = Files.newBufferedReader(emailFile)) {
+                    rawEmail.append(emailFile.getFileName().toString()).append("\n"); // File name as ID
+                    String line = reader.readLine();
+                    while (line != null) {
+                        rawEmail.append(line).append("\n");
+                        line = reader.readLine();
                     }
-
-                    emails.add(emailContent.toString());
-
+                } catch (Exception e) {
+                    System.err.println("Error reading email file: " + emailFile + " - " + e.getMessage());
+                    continue;
                 }
 
-            } catch (Exception e){
-                System.err.println(e.getMessage());
+                // Parse the email and set isRead status
+                try {
+                    AdminEmailObject emailObject = parseEmail(rawEmail.toString());
+                    emailObject.setIsRead(isRead); // Set read/unread status
+                    emails.add(emailObject);
+                } catch (Exception e) {
+                    System.err.println("Error parsing email: " + emailFile + " - " + e.getMessage());
+                }
             }
-
         }
+
         return emails;
     }
+
+    public int getUnreadEmailCount(String username) throws IOException {
+        Path userNewDir = Paths.get(VMAIL_PATH + username.toLowerCase() + "/new");
+        if (Files.exists(userNewDir) && Files.isDirectory(userNewDir)) {
+            try (Stream<Path> files = Files.list(userNewDir)) {
+                return (int) files.count(); // Count files in the directory
+            }
+        }
+        return 0; // No unread emails if directory doesn't exist
+    }
+
+    public boolean markAsRead(ReadResponseDTO dto) {
+        String username = dto.getUsername().toLowerCase();
+        String emailId = dto.getId(); // File name of the email
+        Path userNewDir = Paths.get(VMAIL_PATH + username + "/new");
+        Path userCurDir = Paths.get(VMAIL_PATH + username + "/cur");
+
+        try {
+            // Ensure the /cur directory exists
+            if (!Files.exists(userCurDir)) {
+                Files.createDirectories(userCurDir);
+            }
+
+            // Locate the email in /new or /cur
+            Path emailInNew = userNewDir.resolve(emailId);
+            Path emailInCur = userCurDir.resolve(emailId);
+
+            // If the email is already in /cur, do nothing
+            if (Files.exists(emailInCur)) {
+                return true; // Already marked as read
+            }
+
+            // If the email is in /new, move it to /cur
+            if (Files.exists(emailInNew)) {
+                Files.move(emailInNew, emailInCur);
+                return true; // Successfully moved and marked as read
+            } else {
+                System.err.println("Email not found in /new or /cur: " + emailId);
+                return false; // Email not found
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false; // Failed to mark as read due to an exception
+        }
+    }
+
+
 
     public List<String> parseRawEmailsToHTML(List<String> rawEmails) throws IOException {
 
@@ -67,17 +131,17 @@ public class MailboxReaderService {
 
     }
 
-    public List<AdminEmailObject> parseRawEmailsToObject(List<String> rawEmails) throws IOException, ParseException, MessagingException {
+   /* public List<AdminEmailObject> parseRawEmailsToObject(List<String> rawEmails, boolean isRead) throws IOException, ParseException, MessagingException {
 
         List<AdminEmailObject> objectEmails = new ArrayList<>();
 
         for (String rawEmail : rawEmails) {
-            objectEmails.add(parseEmail(rawEmail));
+            objectEmails.add(parseEmail(rawEmail, isRead));
         }
 
         return objectEmails;
 
-    }
+    }*/
 
     private String parseRawEmailToHTML(String rawEmail) throws IOException {
 
@@ -175,23 +239,21 @@ public class MailboxReaderService {
         AdminEmailObject emailObject = new AdminEmailObject();
         BufferedReader br = new BufferedReader(new StringReader(rawEmail));
 
-        emailObject.setId(br.readLine());
+        emailObject.setId(br.readLine()); // Set ID from the first line
         br.close();
         emailObject.setDate(message.getSentDate());
         emailObject.setSubject(message.getSubject());
         emailObject.setTo(message.getRecipients(Message.RecipientType.TO)[0].toString());
         emailObject.setFrom(message.getFrom()[0].toString());
-
         emailObject.setBody(getTextFromMessage(message));
 
+        // Process attachments if present
         List<EmailAttachment> attachments = new ArrayList<>();
         if (message.getContent() instanceof Multipart) {
             Multipart multipart = (Multipart) message.getContent();
             for (int i = 0; i < multipart.getCount(); i++) {
                 BodyPart bodyPart = multipart.getBodyPart(i);
-
-                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition()) ||
-                        bodyPart.getFileName() != null) {
+                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition()) || bodyPart.getFileName() != null) {
                     EmailAttachment attachment = new EmailAttachment();
                     attachment.setFileName(bodyPart.getFileName());
                     attachment.setContentType(bodyPart.getContentType());
@@ -206,7 +268,6 @@ public class MailboxReaderService {
 
         return emailObject;
     }
-
 
     private String getTextFromMessage(MimeMessage message) throws MessagingException, IOException {
         Object content = message.getContent();

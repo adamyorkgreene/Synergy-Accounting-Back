@@ -3,7 +3,9 @@ package edu.kennesaw.appdomain.controller;
 import edu.kennesaw.appdomain.dto.AdminEmailObject;
 import edu.kennesaw.appdomain.dto.EmailAttachment;
 import edu.kennesaw.appdomain.dto.MessageResponse;
+import edu.kennesaw.appdomain.dto.ReadResponseDTO;
 import edu.kennesaw.appdomain.service.EmailService;
+import edu.kennesaw.appdomain.service.MailboxReaderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,8 @@ public class EmailController {
 
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private MailboxReaderService mailboxReaderService;
 
     @PostMapping(value = "/send-email", consumes = "multipart/form-data")
     public ResponseEntity<?> sendAdminEmail(
@@ -50,8 +54,6 @@ public class EmailController {
         return ResponseEntity.ok().body(new MessageResponse("Email sent."));
     }
 
-
-
     @GetMapping("/emails/{username}")
     public ResponseEntity<?> getMail(@PathVariable("username") String username) {
         List<AdminEmailObject> emails = emailService.getUserEmails(username);
@@ -59,6 +61,24 @@ public class EmailController {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("No emails found."));
         }
         return ResponseEntity.ok(emails);
+    }
+
+    @GetMapping("/emails/unread/{username}")
+    public ResponseEntity<?> getUnreadEmailCount(@PathVariable("username") String username) {
+        try {
+            int unreadCount = mailboxReaderService.getUnreadEmailCount(username);
+            return ResponseEntity.ok(unreadCount);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching unread emails.");
+        }
+    }
+
+
+    @PostMapping("/mark-as-read")
+    public ResponseEntity<?> markAsRead(@RequestBody ReadResponseDTO dto) {
+        boolean result = mailboxReaderService.markAsRead(dto);
+        if (result) return ResponseEntity.ok(result);
+        return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/emails/delete")

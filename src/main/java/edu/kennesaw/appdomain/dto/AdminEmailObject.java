@@ -1,5 +1,7 @@
 package edu.kennesaw.appdomain.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Date;
 import java.util.List;
 
@@ -16,6 +18,8 @@ public class AdminEmailObject {
     private String body;
 
     private String id;
+
+    private boolean isRead;
 
     private List<EmailAttachment> attachments = null;
 
@@ -45,6 +49,8 @@ public class AdminEmailObject {
         this.attachments = attachments;
     }
 
+    public void setIsRead(boolean isRead) { this.isRead = isRead; }
+
     public String getTo() {
         return to;
     }
@@ -68,6 +74,9 @@ public class AdminEmailObject {
     public List<EmailAttachment> getAttachments() {
         return attachments;
     }
+
+    @JsonProperty("isRead")
+    public boolean isRead() { return isRead; }
 
 }
 

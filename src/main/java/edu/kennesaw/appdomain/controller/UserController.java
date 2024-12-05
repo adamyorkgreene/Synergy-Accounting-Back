@@ -95,7 +95,7 @@ public class UserController {
                     " Token\nThis user is already confirmed, or the link is incorrect."));
         }
         User user = confToken.getUser();
-        user.setUserType(UserType.USER);
+        user.setUserType(UserType.ACCOUNTANT);
         userRepository.save(user);
         confirmationRepository.delete(confToken);
         emailService.sendApprovalEmail(user.getEmail());

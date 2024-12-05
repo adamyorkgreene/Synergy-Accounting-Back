@@ -7,6 +7,7 @@ public class CurrentRatioDTO {
     private double ratio;
 
     public CurrentRatioDTO(double assets, double liabilities) {
+        if (liabilities == 0) throw new ArithmeticException("Liabilities cannot be zero");
         this.assets = assets;
         this.liabilities = liabilities;
         this.ratio = assets/liabilities;
