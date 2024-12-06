@@ -25,4 +25,16 @@ public class EventLogService {
 
         eventLogRepository.save(log);
     }
+
+    public void logAccountEvent(Account account, String action, String beforeState, String afterState) {
+        EventLog log = new EventLog();
+        log.setAccountId(account.getAccountNumber());
+        log.setAction(action);
+        log.setUserId((long) -1);
+        log.setBeforeState(beforeState);
+        log.setAfterState(afterState);
+        log.setTimestamp(LocalDateTime.now());
+
+        eventLogRepository.save(log);
+    }
 }

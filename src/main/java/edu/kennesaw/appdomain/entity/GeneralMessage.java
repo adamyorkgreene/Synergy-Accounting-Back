@@ -1,8 +1,6 @@
 package edu.kennesaw.appdomain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class GeneralMessage {
@@ -17,6 +15,7 @@ public class GeneralMessage {
     public String message;
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
     private Long id;
 

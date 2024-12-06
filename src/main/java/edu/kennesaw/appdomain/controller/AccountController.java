@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.*;
 import edu.kennesaw.appdomain.repository.AttachmentRepository;
@@ -62,7 +63,7 @@ public class AccountController {
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/chart-of-accounts/add-transaction")
-    public ResponseEntity<?> addTransaction(@RequestBody TransactionDTO transactionDTO) {
+    public ResponseEntity<?> addTransaction(@RequestBody TransactionDTO transactionDTO) throws JsonProcessingException {
         try {
             Transaction transaction = accountService.addTransaction(transactionDTO.getAccount(),
                     transactionDTO.getTransactionDescription(), transactionDTO.getTransactionAmount(),
@@ -79,7 +80,7 @@ public class AccountController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MANAGER')")
     @PostMapping("/chart-of-accounts/add-journal-entry")
-    public ResponseEntity<?> addJournalEntry(@RequestBody JournalEntryRequest jer) {
+    public ResponseEntity<?> addJournalEntry(@RequestBody JournalEntryRequest jer) throws JsonProcessingException {
         TransactionDTO[] transactionDTOs = jer.getTransactions();
         User user = jer.getUser();
         JournalEntry je = new JournalEntry();
@@ -249,7 +250,7 @@ public class AccountController {
     }
 
     @GetMapping("/approve-journal-entry")
-    public ResponseEntity<?> approveJournalEntry(@RequestParam("token") Long pr) {
+    public ResponseEntity<?> approveJournalEntry(@RequestParam("token") Long pr) throws JsonProcessingException {
         List<TransactionRequest> trs = transactionRequestRepository.findAllByPr(pr);
         if (trs == null || trs.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Transaction" +
@@ -280,7 +281,7 @@ public class AccountController {
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping("/chart-of-accounts/update-account")
-    public ResponseEntity<Account> updateAccount(@RequestBody UpdateAccountDTO accountDTO) {
+    public ResponseEntity<Account> updateAccount(@RequestBody AccountDTO accountDTO) {
         Account updatedAccount = accountService.updateAccount(accountDTO);
         if (updatedAccount != null) {
             return ResponseEntity.ok(updatedAccount);

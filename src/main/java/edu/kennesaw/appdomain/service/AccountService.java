@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.*;
@@ -242,11 +243,13 @@ public class AccountService {
 
     @Transactional
     public Transaction addTransaction(Account account, String transactionDescription, Double transactionAmount,
-                                      AccountType transactionType) {
+                                      AccountType transactionType) throws JsonProcessingException {
 
         if (!account.getIsActive()) {
             return null;
         }
+
+        String beforeState = objectMapper.writeValueAsString(account);  // Serialize state before update
 
         if (transactionType.equals(AccountType.DEBIT)) {
             account.setDebitBalance(account.getDebitBalance() + transactionAmount);
@@ -254,7 +257,10 @@ public class AccountService {
             account.setCreditBalance(account.getCreditBalance() + transactionAmount);
         }
 
-        accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+
+        String afterState = objectMapper.writeValueAsString(savedAccount);
+        eventLogService.logAccountEvent(savedAccount, "TRANSACTION", beforeState, afterState);
 
         Transaction transaction = new Transaction();
         transaction.setAccount(account);
@@ -289,19 +295,25 @@ public class AccountService {
     }
 
     @Transactional
-    public ResponseEntity<?> approveJournalEntry(List<TransactionRequest> trs, String comments) {
+    public ResponseEntity<?> approveJournalEntry(List<TransactionRequest> trs, String comments) throws JsonProcessingException {
         for (TransactionRequest tr : trs) {
             Transaction transaction = new Transaction();
             Account account = tr.getAccount();
             account = accountRepository.findById(account.getAccountNumber())
                     .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+            String beforeState = objectMapper.writeValueAsString(account);
             Double amount = tr.getAmount();
             if (tr.getTransactionType().equals(AccountType.DEBIT)) {
                 account.setDebitBalance(account.getDebitBalance() + amount);
             } else if (tr.getTransactionType().equals(AccountType.CREDIT)) {
                 account.setCreditBalance(account.getCreditBalance() + amount);
             }
-            accountRepository.save(account);
+
+            Account savedAccount = accountRepository.save(account);
+
+            String afterState = objectMapper.writeValueAsString(savedAccount);
+            eventLogService.logAccountEvent(savedAccount, "TRANSACTION", journalEntryRepository.findByPr(tr.getPr()).getUser().getUserid(), beforeState, afterState);
+
             transaction.setTransactionId(tr.getTransactionId());
             transaction.setAccount(account);
             transaction.setTransactionType(tr.getTransactionType());
@@ -579,16 +591,19 @@ public class AccountService {
     }
 
     @Transactional
-    public Account updateAccount(UpdateAccountDTO accountDTO) {
+    public Account updateAccount(AccountDTO accountDTO) {
         Optional<Account> accountOptional = accountRepository.findById(accountDTO.getAccountNumber());
         if (accountOptional.isPresent()) {
             Account account = accountOptional.get();
             try {
                 String beforeState = objectMapper.writeValueAsString(account);  // Serialize state before update
 
-                // Update account fields
                 account.setAccountName(accountDTO.getAccountName());
                 account.setAccountDescription(accountDTO.getAccountDescription());
+                account.setAccountCategory(accountDTO.getAccountCategory());
+                account.setAccountSubCategory(accountDTO.getAccountSubCategory());
+                account.setNormalSide(accountDTO.getNormalSide());
+                account.setInitialBalance(accountDTO.getInitialBalance());
 
                 Account updatedAccount = accountRepository.save(account);
 

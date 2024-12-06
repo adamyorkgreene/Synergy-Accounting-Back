@@ -23,4 +23,13 @@ public class GeneralMessageService {
         }
         return gmDTOs;
     }
+
+    public boolean postGeneralMessage(GenMessageDTO message) {
+        GeneralMessage gm = new GeneralMessage();
+        gm.setMessage(message.getMessage());
+        gm.setDate(message.date);
+        gm.setUsername(message.getUsername());
+        generalMessageRepository.save(gm);
+        return true;
+    }
 }

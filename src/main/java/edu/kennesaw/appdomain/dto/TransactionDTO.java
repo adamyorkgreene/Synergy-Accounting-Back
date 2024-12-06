@@ -1,6 +1,7 @@
 package edu.kennesaw.appdomain.dto;
 
 import edu.kennesaw.appdomain.entity.Account;
+import edu.kennesaw.appdomain.entity.User;
 import edu.kennesaw.appdomain.types.AccountType;
 
 import java.util.Date;
@@ -79,4 +80,5 @@ public class TransactionDTO {
     public void setPr(Long pr) {
         this.pr = pr;
     }
+
 }
