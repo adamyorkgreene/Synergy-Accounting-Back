@@ -30,7 +30,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository())
                         .ignoringRequestMatchers("/", "/login", "/register", "/forgot-password", "/api/csrf",
-                        "/api/users/login", "/api/users/request-password-reset", "/api/users/register"))
+                        "/api/users/login", "/api/users/request-password-reset", "/api/users/register",
+                                "/api/users/verify", "/verify", "/verify-success", "/verify-fail",
+                                "/api/users/confirm-user", "/confirm-user", "/confirm-success", "/confirm-fail"))
                 .addFilterAfter(new SessionDebugFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/users/login", "/", "/login", "/register", "/api/users/register", "/verify", "/password-reset", "/confirm-user",

@@ -1,5 +1,6 @@
 package edu.kennesaw.appdomain.controller;
 
+import edu.kennesaw.appdomain.service.ScriptService;
 import edu.kennesaw.appdomain.types.UserType;
 import edu.kennesaw.appdomain.dto.*;
 import edu.kennesaw.appdomain.entity.ConfirmationToken;
@@ -25,6 +26,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +49,8 @@ public class UserController {
     private ConfirmationRepository confirmationRepository;
     @Autowired
     private VerificationRepository verificationRepository;
+    @Autowired
+    private ScriptService scriptService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest registrationRequest) {
@@ -88,7 +92,7 @@ public class UserController {
     }
 
     @GetMapping("/confirm-user")
-    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token) {
+    public ResponseEntity<MessageResponse> confirmUser(@RequestParam("token") String token) throws IOException, InterruptedException {
         ConfirmationToken confToken = confirmationRepository.findByToken(token);
         if (confToken == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Confirmation" +
@@ -99,6 +103,7 @@ public class UserController {
         userRepository.save(user);
         confirmationRepository.delete(confToken);
         emailService.sendApprovalEmail(user.getEmail());
+        scriptService.createMailbox(user);
         return ResponseEntity.ok(new MessageResponse("User has been confirmed!"));
     }
 

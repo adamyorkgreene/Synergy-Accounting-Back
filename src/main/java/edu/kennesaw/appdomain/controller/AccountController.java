@@ -118,7 +118,6 @@ public class AccountController {
         je.setDate(new Date());
         journalEntryRepository.save(je);
         try {
-            String token = UUID.randomUUID().toString();
             StringBuilder body = new StringBuilder();
             body.append("Total transactions included: ").append(transactionDTOs.length).append("\n\n");
             int i = 1;
@@ -135,10 +134,8 @@ public class AccountController {
                 body.append("- Amount: ").append(transactionDTO.getTransactionAmount()).append("\n");
                 body.append("- Type: ").append(transactionDTO.getTransactionType()).append("\n\n");
             }
-            body.append("You may approve or deny this journal entry through the \"pending journal entries\" button" +
+            body.append("You may approve or deny this journal entry through the \"journal entries\" button" +
                     " in the manager panel.").append("\n");
-            body.append("You may approve this journal entry directly from this email using this link:").append("\n");
-            body.append("https://synergyaccounting.app/approve-journal-entry?token=").append(token);
             emailService.sendMassManagerEmail("Journal Entry Request: " + user.getUsername(), body.toString());
             MessageResponse msgResponse = new MessageResponse("Your journal entry has been added and will be visible once approved" +
                     " by a manager.");
@@ -247,16 +244,6 @@ public class AccountController {
             @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
         RetainedEarningsDTO retainedEarnings = accountService.getRetainedEarnings(startDate, endDate);
         return ResponseEntity.ok(retainedEarnings);
-    }
-
-    @GetMapping("/approve-journal-entry")
-    public ResponseEntity<?> approveJournalEntry(@RequestParam("token") Long pr) throws JsonProcessingException {
-        List<TransactionRequest> trs = transactionRequestRepository.findAllByPr(pr);
-        if (trs == null || trs.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Error: Invalid Transaction" +
-                    " Request Token\nThis transaction has already been responded to, or the link is incorrect."));
-        }
-        return accountService.approveJournalEntry(trs, "");
     }
 
     @GetMapping("/reject-journal-entry")

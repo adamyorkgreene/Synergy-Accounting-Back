@@ -105,7 +105,7 @@ public class UserService {
         emailService.sendVerificationEmail(user.getEmail(), confirmLink);
 
         return ResponseEntity.ok(
-                new MessageResponse("A verification link has been sent to your email.")
+                new MessageResponse("A verification link has been sent to your email. Please check your spam folder.")
         );
     }
 
