@@ -70,6 +70,9 @@ public class AdminService {
     @Autowired
     private EntityManager em;
 
+    @Autowired
+    private EmailService emailService;
+
     public ResponseEntity<?> createUserWithRole(UserDTO userDTO) throws UserAttributeMissingException, IOException, InterruptedException {
 
         userDTO.setIsIncomplete(false);
@@ -107,12 +110,14 @@ public class AdminService {
 
         User createdUser = userRepository.save(user);
 
-        userService.sendResetPasswordEmail(user.getEmail());
+        String token = UUID.randomUUID().toString();
+        userService.savePasswordResetToken(createdUser, token);
+        String resetLink = "https://synergyaccounting.app/password-reset?token=" + token;
+        emailService.sendPasswordSetEmail(user.getEmail(), resetLink);
 
-        if (!createdUser.getUserType().equals(UserType.DEFAULT) && !createdUser.getUserType().equals(UserType.USER)) {
+        if (!createdUser.getUserType().equals(UserType.DEFAULT)) {
             scriptService.createMailbox(createdUser);
         }
-
         return ResponseEntity.ok(createdUser);
     }
 
@@ -132,12 +137,12 @@ public class AdminService {
         UserType existingUserType = existingUser.getUserType();
         UserType newUserType = userDetails.getUserType();
 
-        if (existingUserType.equals(UserType.DEFAULT) || existingUserType.equals(UserType.USER)) {
-            if (!newUserType.equals(UserType.DEFAULT) && !newUserType.equals(UserType.USER)) {
+        if (existingUserType.equals(UserType.DEFAULT)) {
+            if (!newUserType.equals(UserType.DEFAULT)) {
                 scriptService.createMailbox(existingUser);
             }
         } else {
-            if (newUserType.equals(UserType.DEFAULT) || newUserType.equals(UserType.USER)) {
+            if (newUserType.equals(UserType.DEFAULT)) {
                 if (scriptService.mailboxExists(existingUser)) scriptService.deleteMailbox(existingUser);
             }
         }
@@ -219,6 +224,22 @@ public class AdminService {
         return ResponseEntity.ok(new MessageResponse("User: "+ (status ? "activated" : "deactivated") + "successfully"));
     }
 
+    public List<NewUserDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        List<NewUserDTO> usersDTO = new ArrayList<>();
+        users.forEach(user -> usersDTO.add(new NewUserDTO(user)));
+        return usersDTO;
+    }
+
+    public List<NewUserDTO> getExpiredPasswords() {
+        List<UserSecurity> userSecurities = userSecurityRepository.getAllByIsPasswordExpired(true);
+        List<User> users = new ArrayList<>();
+        userSecurities.forEach(userSecurity -> users.add(userSecurity.getUser()));
+        List<NewUserDTO> usersDTO = new ArrayList<>();
+        users.forEach(user -> usersDTO.add(new NewUserDTO(user)));
+        return usersDTO;
+    }
+
     private User createDefaultDeletedUser() {
         User defaultDeletedUserNew = new User();
         defaultDeletedUserNew.setUsername("deleted_user");
@@ -243,7 +264,15 @@ public class AdminService {
         defaultDeletedUserNew.setUserSecurity(userSecurity);
         defaultDeletedUserNew.setUserDate(userDate);
 
-        return userRepository.save(defaultDeletedUserNew);
+        User deletedUser = userRepository.save(defaultDeletedUserNew);
+
+        try {
+            scriptService.createMailbox(deletedUser);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return userRepository.save(deletedUser);
     }
 
     private void updateAndDeleteUserReferences(User user, User defaultDeletedUser) {
@@ -268,7 +297,6 @@ public class AdminService {
         em.flush();
         confirmationRepository.deleteAllByUser(user);
         em.flush();
-
     }
 
 }

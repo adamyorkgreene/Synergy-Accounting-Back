@@ -20,11 +20,11 @@ public class CsrfController {
     @GetMapping("/api/csrf")
     public ResponseEntity<?> getCsrfToken(HttpServletRequest request) {
 
-        HttpSession session = request.getSession(true);
+        HttpSession session = request.getSession(false);
         CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
 
         if (csrfToken == null) {
-            return ResponseEntity.status(403).body(new MessageResponse("CSRF token not available."));
+            return ResponseEntity.status(403).body(new MessageResponse("CSRF token not available. Ensure session exists."));
         } else {
             System.out.println("CSRF Token: " + csrfToken.getToken());
             System.out.println(session == null ? "No session found." : "Session ID: " + session.getId());

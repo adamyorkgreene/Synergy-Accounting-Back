@@ -107,6 +107,39 @@ public class EmailService {
         }
     }
 
+    public void sendPasswordSetEmail(String to, String resetLink) {
+        MimeMessage mm = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mm, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Synergy Accounting - User Invitation");
+            helper.setText(
+                    "<html>" +
+                            "<head>" +
+                                "<style>" +
+                                    "h1 { text-align: center; font-family: 'Copperplate', 'serif'; padding-top: 75px; }" +
+                                    "h2 { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "a { text-align: center; font-family: 'Copperplate', 'serif'; }" +
+                                    "div { text-align: center; }" +
+                                "</style>" +
+                            "</head>" +
+                            "<body>" +
+                                "<div>" +
+                                    "<img src=\"cid:synergyaccounting\" alt=\"Synergy Accounting\" style=\"height:100px;\" />" +
+                                "</div>" +
+                                "<h2>" + "An administrator has created an account linked to this email. To log in, please " +
+                                    "set your password using the link below." +
+                                "</h2>" +
+                                "<a href=\"" + resetLink + "\">Set my Password</a>" +
+                            "</body>" +
+                         "</html>",
+                    true);
+            sendFormattedEmail(mm, helper);
+        } catch (MessagingException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
+    }
+
     public void sendAdminConfirmEmail(String to, User user, String confirmationLink) {
         MimeMessage mm = mailSender.createMimeMessage();
         try {

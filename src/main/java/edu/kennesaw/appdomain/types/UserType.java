@@ -1,5 +1,5 @@
 package edu.kennesaw.appdomain.types;
 
 public enum UserType {
-    DEFAULT, USER, ACCOUNTANT, MANAGER, ADMINISTRATOR
+    DEFAULT, ACCOUNTANT, MANAGER, ADMINISTRATOR
 }

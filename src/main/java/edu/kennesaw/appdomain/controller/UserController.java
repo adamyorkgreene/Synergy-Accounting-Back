@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -174,10 +176,14 @@ public class UserController {
     @GetMapping("/validate")
     public ResponseEntity<?> validateUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             return ResponseEntity.status(401).body(new MessageResponse("User is not authenticated."));
         }
-        return ResponseEntity.ok(userRepository.findByEmail(authentication.getName()));
+        Optional<User> user = userRepository.findByEmail(authentication.getName());
+        if (user.isEmpty()) {
+            return ResponseEntity.status(404).body(new MessageResponse("User not found."));
+        }
+        return ResponseEntity.ok(user.get());
     }
 
     @PostMapping("/logout")
